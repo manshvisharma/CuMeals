@@ -18,7 +18,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onChangeTab }) 
   return (
     <div
       onContextMenu={(e) => e.preventDefault()}
-      className="fixed bottom-4 left-0 right-0 z-40 px-4 max-w-[360px] mx-auto pointer-events-none select-none"
+      className="fixed bottom-6 sm:bottom-7 left-0 right-0 z-40 px-4 max-w-[360px] mx-auto pointer-events-none select-none pb-[env(safe-area-inset-bottom,10px)]"
     >
       <nav className="pointer-events-auto bg-white dark:bg-[#131722] h-16 rounded-[32px] shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_35px_rgba(0,0,0,0.6)] flex items-center justify-around px-1.5 relative overflow-hidden border border-slate-100 dark:border-slate-800">
         {tabs.map((tab) => {

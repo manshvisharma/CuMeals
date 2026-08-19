@@ -37,7 +37,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({ selectedDate, onSelectDate }
   const formattedDateLong = getFormattedDateLong(selectedDate);
 
   return (
-    <div className="pb-28 animate-fadeIn">
+    <div className="pb-32 animate-fadeIn">
       {/* Top Header */}
       <div className="flex items-center justify-between mb-5 pt-2">
         <div>

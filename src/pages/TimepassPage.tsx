@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Gamepad2, Brain, Zap, Trophy, Medal, Sparkles, User as UserIcon } from 'lucide-react';
+import { Gamepad2, Brain, Zap, Trophy, Flame, Calendar, Users } from 'lucide-react';
 import { User as FirebaseUser } from 'firebase/auth';
 import { MemoryGame } from '../components/games/MemoryGame';
 import { MathRushGame } from '../components/games/MathRushGame';
@@ -13,27 +13,28 @@ interface TimepassPageProps {
 export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
   const [activeGame, setActiveGame] = useState<'memory' | 'mathRush' | null>(null);
   const [leaderboardTab, setLeaderboardTab] = useState<'mathRush' | 'memory'>('mathRush');
+  const [timeframe, setTimeframe] = useState<'weekly' | 'lifetime'>('weekly');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState<boolean>(false);
 
   const playerName = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Hostel Student';
 
-  const loadScores = async (tab: 'mathRush' | 'memory') => {
+  const loadScores = async (tab: 'mathRush' | 'memory', tf: 'weekly' | 'lifetime') => {
     setLoadingLeaderboard(true);
-    const data = await getGameLeaderboard(tab);
+    const data = await getGameLeaderboard(tab, tf);
     setLeaderboard(data);
     setLoadingLeaderboard(false);
   };
 
   useEffect(() => {
     if (!activeGame) {
-      loadScores(leaderboardTab);
+      loadScores(leaderboardTab, timeframe);
     }
-  }, [leaderboardTab, activeGame]);
+  }, [leaderboardTab, timeframe, activeGame]);
 
   if (activeGame === 'memory') {
     return (
-      <div className="pb-28 pt-2">
+      <div className="pb-32 pt-2">
         <MemoryGame
           playerName={playerName}
           userEmail={currentUser?.email || undefined}
@@ -45,7 +46,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
 
   if (activeGame === 'mathRush') {
     return (
-      <div className="pb-28 pt-2">
+      <div className="pb-32 pt-2">
         <MathRushGame
           playerName={playerName}
           userEmail={currentUser?.email || undefined}
@@ -56,7 +57,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
   }
 
   return (
-    <div className="pb-28 animate-fadeIn pt-2">
+    <div className="pb-32 animate-fadeIn pt-2">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
@@ -152,36 +153,74 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
       {/* Rankboard / Leaderboard Section */}
       <div className="p-5 rounded-[32px] bg-white dark:bg-[#131722] shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-100 dark:border-slate-800">
         
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Trophy size={20} className="text-amber-500" />
-            <h2 className="font-bold text-slate-900 dark:text-white text-base">
-              Hostel Rankboard
-            </h2>
+        {/* Header & Controls */}
+        <div className="space-y-3 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Trophy size={20} className="text-amber-500" />
+              <h2 className="font-bold text-slate-900 dark:text-white text-base">
+                Hostel Rankboard
+              </h2>
+            </div>
+
+            {/* Sync Badge */}
+            <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Live Synced</span>
+            </div>
           </div>
 
-          {/* Leaderboard Game Switcher */}
-          <div className="flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-bold">
-            <button
-              onClick={() => setLeaderboardTab('mathRush')}
-              className={`px-3 py-1.5 rounded-xl transition-all ${
-                leaderboardTab === 'mathRush'
-                  ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-700'
-              }`}
-            >
-              Math Rush
-            </button>
-            <button
-              onClick={() => setLeaderboardTab('memory')}
-              className={`px-3 py-1.5 rounded-xl transition-all ${
-                leaderboardTab === 'memory'
-                  ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-700'
-              }`}
-            >
-              Memory
-            </button>
+          {/* Timeframe & Game Switcher Controls */}
+          <div className="grid grid-cols-2 gap-2">
+            {/* Weekly vs Lifetime Tab */}
+            <div className="flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-bold">
+              <button
+                onClick={() => setTimeframe('weekly')}
+                className={`flex-1 py-1.5 rounded-xl transition-all text-center flex items-center justify-center gap-1 ${
+                  timeframe === 'weekly'
+                    ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                }`}
+              >
+                <Calendar size={12} />
+                <span>Weekly</span>
+              </button>
+              <button
+                onClick={() => setTimeframe('lifetime')}
+                className={`flex-1 py-1.5 rounded-xl transition-all text-center flex items-center justify-center gap-1 ${
+                  timeframe === 'lifetime'
+                    ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                }`}
+              >
+                <Flame size={12} />
+                <span>Lifetime</span>
+              </button>
+            </div>
+
+            {/* Game Selection Tab */}
+            <div className="flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-bold">
+              <button
+                onClick={() => setLeaderboardTab('mathRush')}
+                className={`flex-1 py-1.5 rounded-xl transition-all text-center ${
+                  leaderboardTab === 'mathRush'
+                    ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                }`}
+              >
+                Math Rush
+              </button>
+              <button
+                onClick={() => setLeaderboardTab('memory')}
+                className={`flex-1 py-1.5 rounded-xl transition-all text-center ${
+                  leaderboardTab === 'memory'
+                    ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                }`}
+              >
+                Memory
+              </button>
+            </div>
           </div>
         </div>
 
@@ -193,14 +232,15 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
             ))}
           </div>
         ) : leaderboard.length === 0 ? (
-          <div className="text-center py-6 text-xs text-slate-400 font-medium">
-            No scores recorded yet. Be the first to play!
+          <div className="text-center py-8 text-xs text-slate-400 font-medium">
+            <Users size={24} className="mx-auto mb-2 text-slate-500 opacity-60" />
+            No scores recorded for this view yet. Play a game to set the top score!
           </div>
         ) : (
           <div className="space-y-2">
             {leaderboard.map((item, index) => {
               const rank = index + 1;
-              const isCurrentUser = item.playerName === playerName;
+              const isCurrentUser = item.playerName.toLowerCase().trim() === playerName.toLowerCase().trim();
 
               return (
                 <div
@@ -208,7 +248,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
                   className={`
                     flex items-center justify-between p-3 rounded-2xl transition-all
                     ${isCurrentUser
-                      ? 'bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/80'
+                      ? 'bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200/80 dark:border-indigo-800/80 shadow-sm'
                       : 'bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }
                   `}
@@ -223,7 +263,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
                       ) : rank === 3 ? (
                         <span className="text-amber-700 text-base">🥉</span>
                       ) : (
-                        <span className="text-slate-400 font-bold">#{rank}</span>
+                        <span className="text-slate-400 font-bold text-xs">#{rank}</span>
                       )}
                     </div>
 

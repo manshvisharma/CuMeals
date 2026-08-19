@@ -17,7 +17,7 @@ export const TimingsPage: React.FC = () => {
   ];
 
   return (
-    <div className="pb-28 animate-fadeIn pt-2">
+    <div className="pb-32 animate-fadeIn pt-2">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="w-11 h-11 rounded-[18px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white dark:border-slate-800 shadow-sm flex items-center justify-center text-slate-900 dark:text-slate-100">

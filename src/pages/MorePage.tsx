@@ -86,7 +86,7 @@ export const MorePage: React.FC<MorePageProps> = ({ onOpenAdmin }) => {
   };
 
   return (
-    <div className="pb-28 animate-fadeIn pt-2">
+    <div className="pb-32 animate-fadeIn pt-2">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <CuMealsLogo size="md" rounded="rounded-[18px]" />

@@ -71,6 +71,7 @@ export interface LeaderboardEntry {
   level?: number;
   date: string;
   createdAt?: string;
+  weekKey?: string;
 }
 
 export interface FeedbackItem {
