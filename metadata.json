@@ -1,0 +1,6 @@
+{
+  "name": "CuMeals",
+  "description": "A mobile-first hostel mess menu PWA with real-time Firebase sync, dark mode, and admin management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

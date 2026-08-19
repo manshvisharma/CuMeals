@@ -1,0 +1,82 @@
+{
+  "entities": {
+    "MenuItem": {
+      "title": "Meal Details",
+      "description": "Structure of a single meal entry",
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "string",
+          "description": "Meal timing e.g. 8:00 AM - 9:30 AM"
+        },
+        "items": {
+          "type": "array",
+          "description": "List of food items in the meal"
+        }
+      },
+      "required": ["time", "items"]
+    },
+    "DailyMenu": {
+      "title": "Daily Menu",
+      "description": "Hostel mess menu for a specific date YYYY-MM-DD",
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "description": "Date formatted as YYYY-MM-DD"
+        },
+        "breakfast": {
+          "$ref": "MenuItem"
+        },
+        "lunch": {
+          "$ref": "MenuItem"
+        },
+        "snacksBoys": {
+          "$ref": "MenuItem"
+        },
+        "snacksGirls": {
+          "$ref": "MenuItem"
+        },
+        "dinner": {
+          "$ref": "MenuItem"
+        }
+      },
+      "required": ["date"]
+    },
+    "Notice": {
+      "title": "Mess Notice",
+      "description": "Notice board announcement for students",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "date": { "type": "string" },
+        "priority": { "type": "string" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["title", "content"]
+    }
+  },
+  "firestore": {
+    "/menus/{dateId}": {
+      "schema": "DailyMenu",
+      "description": "Daily menu collections keyed by YYYY-MM-DD"
+    },
+    "/timings/default": {
+      "schema": "object",
+      "description": "Global meal timing configurations"
+    },
+    "/notices/{noticeId}": {
+      "schema": "Notice",
+      "description": "Mess notice board collection"
+    },
+    "/settings/general": {
+      "schema": "object",
+      "description": "Hostel mess metadata settings"
+    },
+    "/admins/{uid}": {
+      "schema": "object",
+      "description": "Admin authorization documents"
+    }
+  }
+}
