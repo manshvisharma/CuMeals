@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Lock, Mail, Key, LogIn, ArrowLeft } from 'lucide-react';
 import { loginWithEmail, loginWithGoogle, logoutUser } from '../../firebase/auth';
 import { isUserAdmin } from '../../utils/adminUtils';
+import { CuMealsLogo } from '../../components/CuMealsLogo';
 
 interface AdminLoginProps {
   onLoginSuccess: () => void;
@@ -90,9 +91,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
         
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-600 text-white mx-auto flex items-center justify-center shadow-lg shadow-indigo-500/30 mb-3">
-            <Lock size={26} strokeWidth={2.2} />
-          </div>
+          <CuMealsLogo size="lg" rounded="rounded-2xl" className="mx-auto mb-3 shadow-lg shadow-indigo-500/20" />
 
           <h1 className="text-2xl font-black tracking-tight text-slate-100">
             Admin Portal

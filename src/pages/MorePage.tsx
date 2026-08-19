@@ -17,6 +17,7 @@ import { GlassCard } from '../components/GlassCard';
 import { InstallPrompt } from '../components/InstallPrompt';
 import { NoticeModal } from '../components/NoticeModal';
 import { UserProfileModal } from '../components/UserProfileModal';
+import { CuMealsLogo } from '../components/CuMealsLogo';
 import { useMessConfig } from '../hooks/useMenu';
 import { subscribeToAuth } from '../firebase/auth';
 import { submitFeedback } from '../firebase/firestore';
@@ -88,14 +89,7 @@ export const MorePage: React.FC<MorePageProps> = ({ onOpenAdmin }) => {
     <div className="pb-28 animate-fadeIn pt-2">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-11 h-11 rounded-[18px] overflow-hidden bg-slate-900 border border-slate-800 shadow-sm flex items-center justify-center">
-          <img
-            src="/logo.png"
-            alt="CuMeals Logo"
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover"
-          />
-        </div>
+        <CuMealsLogo size="md" rounded="rounded-[18px]" />
 
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-100">
@@ -261,12 +255,7 @@ export const MorePage: React.FC<MorePageProps> = ({ onOpenAdmin }) => {
           <div className="w-full max-w-sm rounded-[32px] bg-slate-900 p-6 text-slate-100 border border-slate-800 shadow-2xl">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
-                <img
-                  src="/logo.png"
-                  alt="CuMeals"
-                  referrerPolicy="no-referrer"
-                  className="w-6 h-6 rounded-lg object-cover"
-                />
+                <CuMealsLogo size="sm" rounded="rounded-lg" />
                 <h3 className="text-lg font-bold">About CuMeals</h3>
               </div>
               <button onClick={() => setActiveModal(null)} className="text-slate-400">✕</button>

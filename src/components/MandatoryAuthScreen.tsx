@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Utensils, Mail, Lock, User as UserIcon, Key, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
 import { loginWithEmail, signUpWithEmail, loginWithGoogle } from '../firebase/auth';
+import { CuMealsLogo } from './CuMealsLogo';
 
 interface MandatoryAuthScreenProps {
   onSuccess: () => void;
@@ -77,14 +78,7 @@ export const MandatoryAuthScreen: React.FC<MandatoryAuthScreenProps> = ({ onSucc
         
         {/* App Logo Header */}
         <div className="text-center mb-6">
-          <div className="w-16 h-16 rounded-[24px] overflow-hidden mx-auto mb-3 shadow-lg shadow-indigo-500/20 border border-slate-700/60 flex items-center justify-center bg-slate-800">
-            <img
-              src="/logo.png"
-              alt="CuMeals Logo"
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover"
-            />
-          </div>
+          <CuMealsLogo size="xl" rounded="rounded-[24px]" className="mx-auto mb-3 shadow-lg shadow-indigo-500/20" />
           <h1 className="text-2xl font-black tracking-tight text-slate-100">
             CuMeals
           </h1>

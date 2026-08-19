@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Smartphone, X } from 'lucide-react';
+import { Download, X } from 'lucide-react';
+import { CuMealsLogo } from './CuMealsLogo';
 
 export const InstallPrompt: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -25,7 +26,7 @@ export const InstallPrompt: React.FC = () => {
 
   const handleInstall = async () => {
     if (!deferredPrompt) {
-      alert('To install Mess Menu as a PWA:\n1. Tap Share/Menu in your browser\n2. Select "Add to Home Screen"');
+      alert('To install CuMeals as an app:\n1. Tap Share or browser Menu (⋮)\n2. Select "Add to Home screen" or "Install App"');
       return;
     }
     deferredPrompt.prompt();
@@ -39,18 +40,16 @@ export const InstallPrompt: React.FC = () => {
   if (isInstalled || dismissed) return null;
 
   return (
-    <div className="mb-4 p-4 rounded-[22px] bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 dark:border-indigo-500/30 backdrop-blur-md flex items-center justify-between gap-3">
+    <div className="mb-4 p-4 rounded-[22px] bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/30 backdrop-blur-md flex items-center justify-between gap-3">
       <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-2xl bg-indigo-600 text-white shrink-0 shadow-md">
-          <Smartphone size={20} />
-        </div>
+        <CuMealsLogo size="sm" rounded="rounded-xl" />
 
         <div>
-          <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
-            Install Mess Menu App
+          <h4 className="text-xs font-bold text-slate-100">
+            Install CuMeals App
           </h4>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Add to home screen for fast native experience
+          <p className="text-[11px] text-slate-400">
+            Add to home screen for 1-tap quick access
           </p>
         </div>
       </div>
@@ -58,7 +57,7 @@ export const InstallPrompt: React.FC = () => {
       <div className="flex items-center gap-1.5 shrink-0">
         <button
           onClick={handleInstall}
-          className="px-3 py-1.5 rounded-full bg-slate-900 dark:bg-indigo-600 text-white text-xs font-semibold flex items-center gap-1 shadow-sm active:scale-95"
+          className="px-3 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1 shadow-sm active:scale-95 transition-all"
         >
           <Download size={13} />
           <span>Install</span>
@@ -66,7 +65,8 @@ export const InstallPrompt: React.FC = () => {
 
         <button
           onClick={() => setDismissed(true)}
-          className="p-1 rounded-full text-slate-400 hover:text-slate-600"
+          className="p-1 rounded-full text-slate-400 hover:text-slate-200"
+          aria-label="Dismiss"
         >
           <X size={16} />
         </button>

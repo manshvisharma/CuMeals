@@ -5,6 +5,7 @@ import { MealCard } from '../components/MealCard';
 import { MealDetailModal } from '../components/MealDetailModal';
 import { CalendarModal } from '../components/CalendarModal';
 import { NoticeModal } from '../components/NoticeModal';
+import { CuMealsLogo } from '../components/CuMealsLogo';
 import { useMenu, useMessConfig } from '../hooks/useMenu';
 import { MealType } from '../types';
 import { getFormattedDateLong, getRelativeDayLabel, addDays, getTodayString } from '../utils/dateUtils';
@@ -38,14 +39,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({ selectedDate, onSelectDate }
       <div className="flex items-center justify-between mb-5 pt-2">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl overflow-hidden shadow-sm border border-slate-700/60 bg-slate-800 shrink-0">
-              <img
-                src="/logo.png"
-                alt="CuMeals"
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <CuMealsLogo size="sm" rounded="rounded-xl" />
             <h1 className="text-2xl font-bold text-slate-100 tracking-tight">
               CuMeals
             </h1>
