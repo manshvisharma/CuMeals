@@ -1,13 +1,12 @@
 {
-  "id": "/",
+  "id": "cumeals-app-pwa",
   "name": "CuMeals - Hostel Mess Menu",
   "short_name": "CuMeals",
-  "description": "CuMeals - Fast, modern hostel mess menu with real-time meal timings and daily schedule",
+  "description": "CuMeals - Fast mobile-first hostel mess menu with daily schedule and game rankboard",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
-  "prefer_related_applications": false,
   "orientation": "portrait",
   "background_color": "#07090E",
   "theme_color": "#07090E",
@@ -35,6 +34,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
     },
     {
       "src": "/apple-touch-icon.png",

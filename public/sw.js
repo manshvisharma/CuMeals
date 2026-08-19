@@ -1,23 +1,23 @@
-const CACHE_NAME = 'cumeals-v3';
+const CACHE_NAME = 'cumeals-pwa-v5';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/logo.png',
+  '/favicon.svg',
   '/favicon.png',
   '/icon-192.png',
   '/icon-512.png',
   '/apple-touch-icon.png',
-  '/apple-touch-icon-precomposed.png'
+  '/apple-touch-icon-precomposed.png',
+  '/logo.png'
 ];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
-    })
+    }).then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
@@ -30,27 +30,30 @@ self.addEventListener('activate', (e) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Fetch background update
-        fetch(e.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, networkResponse));
+  const url = new URL(e.request.url);
+
+  // Network first for API/auth/dynamic requests, cache first for static assets
+  if (url.pathname.endsWith('.png') || url.pathname.endsWith('.svg') || url.pathname.endsWith('.json')) {
+    e.respondWith(
+      caches.match(e.request).then((cached) => {
+        return cached || fetch(e.request).then((res) => {
+          if (res.status === 200) {
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(e.request, copy));
           }
-        }).catch(() => {});
-        return cachedResponse;
-      }
-      return fetch(e.request).catch(() => {
-        return caches.match('/');
-      });
-    })
-  );
+          return res;
+        });
+      })
+    );
+  } else {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match(e.request))
+    );
+  }
 });
