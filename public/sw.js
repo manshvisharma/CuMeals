@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cumeals-v2';
+const CACHE_NAME = 'cumeals-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -6,7 +6,9 @@ const ASSETS_TO_CACHE = [
   '/logo.png',
   '/favicon.png',
   '/icon-192.png',
-  '/icon-512.png'
+  '/icon-512.png',
+  '/apple-touch-icon.png',
+  '/apple-touch-icon-precomposed.png'
 ];
 
 self.addEventListener('install', (e) => {

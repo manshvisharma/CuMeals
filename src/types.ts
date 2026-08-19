@@ -70,6 +70,7 @@ export interface LeaderboardEntry {
   moves?: number;
   level?: number;
   date: string;
+  createdAt?: string;
 }
 
 export interface FeedbackItem {

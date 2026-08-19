@@ -10,34 +10,48 @@ service cloud.firestore {
     // Helper function to check if signed in user is an admin
     function isAdmin() {
       return isSignedIn() && (
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == "17monusharma@gmail.com" ||
         request.auth.token.email == "17monuSHARMA@gmail.com" ||
-        request.auth.token.email != null
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
       );
     }
 
-    // Public read for menus, admin full access
+    // Public read for menus, signed in user or admin can write
     match /menus/{dateId} {
       allow read: if true;
       allow write: if isSignedIn();
     }
 
-    // Public read for timings, admin full access
+    // Public read for timings, signed in user or admin can write
     match /timings/{timingDoc} {
       allow read: if true;
       allow write: if isSignedIn();
     }
 
-    // Public read for notices, admin full access
+    // Public read for notices, signed in user or admin can write
     match /notices/{noticeId} {
       allow read: if true;
       allow write: if isSignedIn();
     }
 
-    // Public read for settings, admin full access
+    // Public read for settings, signed in user or admin can write
     match /settings/{settingDoc} {
       allow read: if true;
       allow write: if isSignedIn();
+    }
+
+    // Leaderboards: everyone can read & record game scores
+    match /leaderboards/{scoreId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin();
+    }
+
+    // Feedbacks & suggestions
+    match /feedbacks/{feedbackId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin();
     }
 
     // Admins collection

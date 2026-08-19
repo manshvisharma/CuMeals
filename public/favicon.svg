@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="50%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#8B5CF6" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer Rounded Squircle Background -->
+  <rect x="16" y="16" width="480" height="480" rx="110" fill="url(#bgGrad)" />
+  <rect x="16" y="16" width="480" height="480" rx="110" fill="url(#glowGrad)" />
+  <rect x="16" y="16" width="480" height="480" rx="110" fill="none" stroke="#A5B4FC" stroke-width="8" stroke-opacity="0.4" />
+
+  <!-- Fork and Knife / Utensils Icon (Crisp Minimalist Vector) -->
+  <g transform="translate(128, 128) scale(10.666)" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Lucide Utensils / Fork and Knife Path -->
+    <path d="M18 2v6a3 3 0 0 1-3 3 3 3 0 0 1-3-3V2" />
+    <path d="M15 11v11" />
+    <path d="M6 2v20" />
+    <path d="M3 2v6a3 3 0 0 0 6 0V2" />
+  </g>
+</svg>
