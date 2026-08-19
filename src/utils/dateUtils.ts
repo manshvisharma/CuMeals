@@ -1,3 +1,32 @@
+import { DayOfWeek } from '../types';
+
+export const DAYS_OF_WEEK: { id: DayOfWeek; name: string; shortName: string }[] = [
+  { id: 'monday', name: 'Monday', shortName: 'Mon' },
+  { id: 'tuesday', name: 'Tuesday', shortName: 'Tue' },
+  { id: 'wednesday', name: 'Wednesday', shortName: 'Wed' },
+  { id: 'thursday', name: 'Thursday', shortName: 'Thu' },
+  { id: 'friday', name: 'Friday', shortName: 'Fri' },
+  { id: 'saturday', name: 'Saturday', shortName: 'Sat' },
+  { id: 'sunday', name: 'Sunday', shortName: 'Sun' }
+];
+
+export function getTodayDayOfWeek(): DayOfWeek {
+  const dayIndex = new Date().getDay(); // 0 = Sunday, 1 = Monday, ...
+  const mapping: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  return mapping[dayIndex];
+}
+
+export function getDayOfWeekFromDate(dateStr: string): DayOfWeek {
+  if (DAYS_OF_WEEK.some(d => d.id === dateStr.toLowerCase())) {
+    return dateStr.toLowerCase() as DayOfWeek;
+  }
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const dayIndex = date.getDay();
+  const mapping: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  return mapping[dayIndex];
+}
+
 export function getTodayString(): string {
   const d = new Date();
   const year = d.getFullYear();
@@ -95,8 +124,8 @@ export function getMealTimeStatus(timeRangeStr: string, targetDateStr: string): 
     return { status: 'upcoming', progressPercent: 0, timeRemainingText: 'Upcoming' };
   }
 
-  const parts = timeRangeStr.split('-');
-  if (parts.length !== 2) {
+  const parts = timeRangeStr.split(/[-–—]|to/i);
+  if (parts.length < 2) {
     return { status: 'unknown', progressPercent: 0 };
   }
 

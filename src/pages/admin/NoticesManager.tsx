@@ -49,12 +49,12 @@ export const NoticesManager: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fadeIn">
       
       {/* Create Notice Form */}
-      <div className="p-5 rounded-[28px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white dark:border-slate-800 shadow-sm">
-        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
-          <Bell size={16} />
+      <div className="lg:col-span-5 p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-sm h-fit">
+        <h3 className="text-sm font-bold text-slate-100 mb-3 flex items-center gap-2">
+          <Bell size={16} className="text-indigo-400" />
           <span>Post New Notice</span>
         </h3>
 
@@ -65,23 +65,23 @@ export const NoticesManager: React.FC = () => {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Notice Title (e.g. Special Sunday Feast)"
-            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-none text-xs text-slate-900 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
           />
 
           <textarea
-            rows={3}
+            rows={4}
             required
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Notice Announcement details..."
-            className="w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border-none text-xs text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
+            className="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
           />
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 pt-1">
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value as any)}
-              className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none"
+              className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 outline-none"
             >
               <option value="normal">Normal Priority</option>
               <option value="high">High Priority (Highlighted)</option>
@@ -89,19 +89,19 @@ export const NoticesManager: React.FC = () => {
 
             <button
               type="submit"
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md"
+              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
             >
               <Plus size={14} />
-              <span>Publish Notice</span>
+              <span>Publish</span>
             </button>
           </div>
         </form>
       </div>
 
       {/* Active Notices List */}
-      <div className="space-y-3">
+      <div className="lg:col-span-7 space-y-3">
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
-          Active Notices
+          Active Notices ({notices.length})
         </h3>
 
         {loading ? (
@@ -110,21 +110,21 @@ export const NoticesManager: React.FC = () => {
           notices.map((n) => (
             <div
               key={n.id}
-              className="p-4 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-white dark:border-slate-800 flex items-start justify-between gap-3 shadow-sm"
+              className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-start justify-between gap-3 shadow-sm"
             >
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{n.title}</span>
+                  <span className="text-sm font-bold text-slate-100">{n.title}</span>
                   {n.priority === 'high' && (
-                    <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
-                      HIGH
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-bold border border-amber-500/30">
+                      HIGH PRIORITY
                     </span>
                   )}
                 </div>
 
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-2">{n.content}</p>
+                <p className="text-xs text-slate-300 leading-relaxed mb-2 whitespace-pre-wrap">{n.content}</p>
 
-                <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                <span className="text-[10px] text-slate-500 flex items-center gap-1">
                   <Calendar size={10} />
                   Posted: {n.date}
                 </span>
@@ -132,7 +132,7 @@ export const NoticesManager: React.FC = () => {
 
               <button
                 onClick={() => handleDelete(n.id)}
-                className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                className="p-2 rounded-xl text-rose-400 hover:bg-rose-950/40 transition-colors"
                 title="Delete Notice"
               >
                 <Trash2 size={16} />

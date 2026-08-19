@@ -32,36 +32,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onBack
   ];
 
   return (
-    <div className="pb-28 animate-fadeIn pt-2 max-w-lg mx-auto">
+    <div className="pb-16 animate-fadeIn pt-2 w-full max-w-5xl mx-auto">
       
       {/* Top Admin Bar */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800/80">
         <button
           onClick={onBackToApp}
-          className="px-3.5 py-2 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-300 flex items-center gap-1.5 shadow-sm active:scale-95"
+          className="px-4 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-2 shadow-sm transition-all active:scale-95"
         >
           <ArrowLeft size={16} />
-          <span>Exit Admin</span>
+          <span>Exit Admin Portal</span>
         </button>
 
-        <div className="text-center">
-          <h1 className="text-lg font-bold tracking-tight text-slate-100 flex items-center justify-center gap-1.5">
-            <LayoutDashboard size={18} className="text-indigo-400" />
-            <span>Admin Portal</span>
-          </h1>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+            <LayoutDashboard size={18} />
+          </div>
+          <div>
+            <h1 className="text-base sm:text-lg font-bold tracking-tight text-slate-100 leading-tight">
+              CuMeals Admin Portal
+            </h1>
+            <p className="text-[11px] text-slate-400 font-medium hidden sm:block">
+              Manage weekly day menus, timings, feedback & notices
+            </p>
+          </div>
         </div>
 
         <button
           onClick={handleSignOut}
-          className="p-2.5 rounded-full bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors"
+          className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-rose-500/20"
           title="Sign Out"
         >
-          <LogOut size={18} />
+          <LogOut size={16} />
+          <span className="hidden sm:inline">Sign Out</span>
         </button>
       </div>
 
       {/* Admin Tab Navigation Pills */}
-      <div className="flex items-center gap-1 overflow-x-auto no-scrollbar p-1.5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm mb-6">
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar p-1.5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-sm mb-6">
         {tabs.map((t) => {
           const Icon = t.icon;
           const isActive = activeTab === t.id;
@@ -71,14 +79,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onBack
               key={t.id}
               onClick={() => setActiveTab(t.id)}
               className={`
-                flex-1 min-w-[72px] py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap
+                flex-1 min-w-[90px] py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap
                 ${isActive
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
                 }
               `}
             >
-              <Icon size={14} />
+              <Icon size={16} />
               <span>{t.label}</span>
             </button>
           );

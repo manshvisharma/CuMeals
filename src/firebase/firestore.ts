@@ -4,14 +4,12 @@ import {
   setDoc,
   collection,
   getDocs,
-  deleteDoc,
-  query,
-  orderBy,
-  limit
+  deleteDoc
 } from 'firebase/firestore';
 import { db, auth } from './config';
 import { DailyMenu, MealTimings, NoticeItem, MessSettings, FeedbackItem } from '../types';
 import { generateMockMenus, defaultTimings, defaultNotices, defaultSettings } from './mockData';
+import { getDayOfWeekFromDate } from '../utils/dateUtils';
 
 enum OperationType {
   CREATE = 'create',
@@ -52,29 +50,42 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 // In-memory cache synced with local storage for instant fallback
 const localMockMenus = generateMockMenus();
 
-function getLocalStorageMenu(date: string): DailyMenu | null {
+function getLocalStorageMenu(key: string): DailyMenu | null {
   try {
-    const saved = localStorage.getItem(`mess_menu_${date}`);
-    if (saved) return JSON.parse(saved);
+    const saved = localStorage.getItem(`mess_menu_${key.toLowerCase()}`);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Ensure the saved menu matches this exact date key
+      if (parsed && (parsed.date === key || parsed.day === key)) {
+        return parsed;
+      }
+    }
   } catch (e) {
     console.error('Local storage read error', e);
   }
-  return localMockMenus[date] || null;
+  return localMockMenus[key.toLowerCase()] || null;
 }
 
 function setLocalStorageMenu(menu: DailyMenu) {
   try {
-    localStorage.setItem(`mess_menu_${menu.date}`, JSON.stringify(menu));
+    const key = (menu.date || menu.day || '').toLowerCase();
+    if (key) {
+      localStorage.setItem(`mess_menu_${key}`, JSON.stringify(menu));
+    }
   } catch (e) {
     console.error('Local storage write error', e);
   }
 }
 
-// 1. Fetch Menu for a specific date
-export async function fetchMenuForDate(dateStr: string): Promise<DailyMenu | null> {
-  const path = `menus/${dateStr}`;
+// 1. Fetch Menu for a specific date (e.g. "2026-08-20")
+export async function fetchMenuForDate(dateOrDayStr: string): Promise<DailyMenu | null> {
+  const key = dateOrDayStr.trim().toLowerCase();
+  const isSpecificDate = /^\d{4}-\d{2}-\d{2}$/.test(key);
+
+  // 1. Try direct date key in Firestore
+  const path = `menus/${key}`;
   try {
-    const docRef = doc(db, 'menus', dateStr);
+    const docRef = doc(db, 'menus', key);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const data = docSnap.data() as DailyMenu;
@@ -85,46 +96,75 @@ export async function fetchMenuForDate(dateStr: string): Promise<DailyMenu | nul
     handleFirestoreError(err, OperationType.GET, path);
   }
 
-  // Fallback to local storage or generated mock
-  return getLocalStorageMenu(dateStr);
+  // 2. Check local memory / storage for this exact date
+  const localDirect = getLocalStorageMenu(key);
+  if (localDirect) {
+    return localDirect;
+  }
+
+  // 3. If searching for a day name (e.g. "thursday") only, check day doc
+  if (!isSpecificDate) {
+    try {
+      const dayRef = doc(db, 'menus', key);
+      const daySnap = await getDoc(dayRef);
+      if (daySnap.exists()) {
+        const data = daySnap.data() as DailyMenu;
+        return data;
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.GET, `menus/${key}`);
+    }
+  }
+
+  // If date has no menu uploaded, return null (do not show wrong menu from another week/day)
+  return null;
 }
 
-// 2. Save/Update Menu for a date
+// 2. Save/Update Menu for a day or date (Always overwrites with latest version)
 export async function saveMenuForDate(menu: DailyMenu): Promise<boolean> {
-  const path = `menus/${menu.date}`;
-  const updatedMenu = {
+  const key = (menu.date || menu.day || 'monday').trim().toLowerCase();
+  const path = `menus/${key}`;
+  
+  const updatedMenu: DailyMenu = {
     ...menu,
+    date: key,
+    day: (menu.day || (key.includes('-') ? getDayOfWeekFromDate(key) : key)) as any,
     updatedAt: new Date().toISOString(),
     updatedBy: auth.currentUser?.email || 'Admin'
   };
 
-  // Always update local memory & storage first
+  // Always update local memory & storage first so immediate refresh gets the latest
   setLocalStorageMenu(updatedMenu);
-  localMockMenus[menu.date] = updatedMenu;
+  localMockMenus[key] = updatedMenu;
 
   try {
-    const docRef = doc(db, 'menus', menu.date);
-    await setDoc(docRef, updatedMenu, { merge: true });
+    const docRef = doc(db, 'menus', key);
+    // Overwrite completely so stale/deleted items don't linger
+    await setDoc(docRef, updatedMenu);
     return true;
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
-    // Even if Firestore fails, local changes persisted
     return true;
   }
 }
 
-// 3. Bulk Save Menus
+// 3. Bulk Save Menus (Overwrites each date menu with the latest)
 export async function saveBulkMenus(menusList: DailyMenu[]): Promise<{ successCount: number; errors: string[] }> {
   let successCount = 0;
   const errors: string[] = [];
 
   for (const menu of menusList) {
-    if (!menu.date) {
-      errors.push('Menu missing required date property');
+    const key = (menu.date || menu.day || '').trim();
+    if (!key) {
+      errors.push('Menu missing required date or day property');
       continue;
     }
     const saved = await saveMenuForDate(menu);
-    if (saved) successCount++;
+    if (saved) {
+      successCount++;
+    } else {
+      errors.push(`Failed to save menu for ${key}`);
+    }
   }
 
   return { successCount, errors };
@@ -256,7 +296,7 @@ export async function submitFeedback(feedback: Omit<FeedbackItem, 'id' | 'create
     return true;
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, `feedbacks/${newFeedback.id}`);
-    return true; // Persisted locally
+    return true;
   }
 }
 
@@ -334,4 +374,3 @@ export async function deleteFeedback(id: string): Promise<boolean> {
     return true;
   }
 }
-

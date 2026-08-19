@@ -1,3 +1,5 @@
+export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+
 export interface MealData {
   time: string;
   items: string[];
@@ -5,7 +7,8 @@ export interface MealData {
 }
 
 export interface DailyMenu {
-  date: string; // YYYY-MM-DD
+  day?: DayOfWeek;
+  date?: string; // YYYY-MM-DD or DayOfWeek string (e.g. 'monday')
   breakfast: MealData;
   lunch: MealData;
   snacksBoys: MealData;

@@ -1,4 +1,5 @@
-import { DailyMenu } from '../types';
+import { DailyMenu, DayOfWeek } from '../types';
+import { getDayOfWeekFromDate } from './dateUtils';
 
 export interface ParseResult {
   isValid: boolean;
@@ -6,6 +7,8 @@ export interface ParseResult {
   menus: DailyMenu[];
   errors: string[];
 }
+
+const VALID_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 export function parseAndValidateMenuJson(jsonString: string): ParseResult {
   const result: ParseResult = {
@@ -58,49 +61,70 @@ function validateSingleMenuObject(obj: any, index: number): string[] {
   const errs: string[] = [];
   const prefix = `[Entry #${index}]`;
 
-  if (!obj.date) {
-    errs.push(`${prefix} Missing 'date' property (expected YYYY-MM-DD).`);
-  } else if (!/^\d{4}-\d{2}-\d{2}$/.test(obj.date)) {
-    errs.push(`${prefix} Invalid date format '${obj.date}'. Must be YYYY-MM-DD.`);
+  const dateVal = String(obj.date || obj.day || '').trim();
+  const hasDay = VALID_DAYS.includes(dateVal.toLowerCase());
+  const hasDate = /^\d{4}-\d{2}-\d{2}$/.test(dateVal);
+
+  if (!hasDay && !hasDate) {
+    errs.push(`${prefix} Missing valid 'date' (e.g. "2026-08-20") or 'day' (e.g. "thursday").`);
   }
 
-  const meals = ['breakfast', 'lunch', 'snacksBoys', 'snacksGirls', 'dinner'];
+  const meals = ['breakfast', 'lunch', 'snacksBoys', 'snacksGirls', 'snacks', 'dinner'];
   meals.forEach(m => {
     if (obj[m] && typeof obj[m] !== 'object') {
-      errs.push(`${prefix} '${m}' must be an object with 'time' and 'items'.`);
+      errs.push(`${prefix} '${m}' must be an object with an 'items' array.`);
     }
   });
 
   return errs;
 }
 
+function extractItems(mealObj: any): string[] {
+  if (!mealObj) return [];
+  if (Array.isArray(mealObj.items)) {
+    return mealObj.items.map((i: any) => String(i).trim()).filter((i: string) => i.length > 0);
+  }
+  if (Array.isArray(mealObj)) {
+    return mealObj.map((i: any) => String(i).trim()).filter((i: string) => i.length > 0);
+  }
+  return [];
+}
+
 function cleanMenuObject(raw: any): DailyMenu {
-  const defaultMeal = (time: string, items: string[]) => ({
-    time: raw?.time || time,
-    items: Array.isArray(raw?.items) ? raw.items : items
-  });
+  const dateKey = String(raw.date || raw.day || '').trim().toLowerCase();
+  const isDatePattern = /^\d{4}-\d{2}-\d{2}$/.test(dateKey);
+  const resolvedDay: DayOfWeek = isDatePattern 
+    ? getDayOfWeekFromDate(dateKey) 
+    : (VALID_DAYS.includes(dateKey) ? (dateKey as DayOfWeek) : 'monday');
+
+  // Preserve the exact date string if provided (e.g. "2026-08-20")
+  const finalDate = isDatePattern ? dateKey : resolvedDay;
+
+  const snacksBoysItems = extractItems(raw.snacksBoys || raw.snacks);
+  const snacksGirlsItems = extractItems(raw.snacksGirls || raw.snacks);
 
   return {
-    date: raw.date,
+    date: finalDate,
+    day: resolvedDay,
     breakfast: {
-      time: raw.breakfast?.time || '8:00 AM – 9:30 AM',
-      items: Array.isArray(raw.breakfast?.items) ? raw.breakfast.items : ['Poha', 'Banana', 'Tea']
+      time: raw.breakfast?.time || '',
+      items: extractItems(raw.breakfast)
     },
     lunch: {
-      time: raw.lunch?.time || '12:30 PM – 2:00 PM',
-      items: Array.isArray(raw.lunch?.items) ? raw.lunch.items : ['Rajma Chawal', 'Salad']
+      time: raw.lunch?.time || '',
+      items: extractItems(raw.lunch)
     },
     snacksBoys: {
-      time: raw.snacksBoys?.time || raw.snacks?.time || '4:30 PM – 5:30 PM',
-      items: Array.isArray(raw.snacksBoys?.items) ? raw.snacksBoys.items : Array.isArray(raw.snacks?.items) ? raw.snacks.items : ['Samosa', 'Tea']
+      time: raw.snacksBoys?.time || raw.snacks?.time || '',
+      items: snacksBoysItems
     },
     snacksGirls: {
-      time: raw.snacksGirls?.time || raw.snacks?.time || '4:30 PM – 5:30 PM',
-      items: Array.isArray(raw.snacksGirls?.items) ? raw.snacksGirls.items : Array.isArray(raw.snacks?.items) ? raw.snacks.items : ['Sandwich', 'Milk']
+      time: raw.snacksGirls?.time || raw.snacks?.time || '',
+      items: snacksGirlsItems
     },
     dinner: {
-      time: raw.dinner?.time || '8:00 PM – 9:30 PM',
-      items: Array.isArray(raw.dinner?.items) ? raw.dinner.items : ['Dal', 'Rice', 'Mix Veg']
+      time: raw.dinner?.time || '',
+      items: extractItems(raw.dinner)
     },
     updatedAt: new Date().toISOString()
   };

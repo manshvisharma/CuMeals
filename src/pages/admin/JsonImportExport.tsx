@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { FileJson, Upload, Download, CheckCircle2, AlertTriangle, Copy, FileText } from 'lucide-react';
+import { Upload, Download, CheckCircle2, AlertTriangle, Copy, FileText, Calendar } from 'lucide-react';
 import { parseAndValidateMenuJson, ParseResult } from '../../utils/menuParser';
 import { saveBulkMenus, fetchMenuForDate } from '../../firebase/firestore';
-import { getTodayString } from '../../utils/dateUtils';
+import { getTodayString, addDays, getFormattedDateLong } from '../../utils/dateUtils';
 
 export const JsonImportExport: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'import' | 'export'>('import');
@@ -19,35 +19,38 @@ export const JsonImportExport: React.FC = () => {
   const sampleSingleJson = `{
   "date": "${getTodayString()}",
   "breakfast": {
-    "time": "08:00 AM - 09:30 AM",
     "items": ["Poha", "Banana", "Tea"]
   },
   "lunch": {
-    "time": "12:30 PM - 02:00 PM",
-    "items": ["Rajma Chawal", "Salad"]
+    "items": ["Rajma Chawal", "Salad", "Curd"]
   },
   "snacksBoys": {
-    "time": "04:30 PM - 05:30 PM",
     "items": ["Samosa", "Tea"]
   },
   "snacksGirls": {
-    "time": "04:30 PM - 05:30 PM",
     "items": ["Sandwich", "Milk"]
   },
   "dinner": {
-    "time": "08:00 PM - 09:30 PM",
-    "items": ["Dal", "Rice", "Mix Veg"]
+    "items": ["Dal Makhani", "Jeera Rice", "Roti", "Gulab Jamun"]
   }
 }`;
 
   const sampleBulkJson = `[
   {
     "date": "${getTodayString()}",
-    "breakfast": { "time": "08:00 AM - 09:30 AM", "items": ["Poha", "Banana"] }
+    "breakfast": { "items": ["Poha", "Tea"] },
+    "lunch": { "items": ["Rajma Chawal", "Salad"] },
+    "snacksBoys": { "items": ["Samosa", "Tea"] },
+    "snacksGirls": { "items": ["Sandwich", "Milk"] },
+    "dinner": { "items": ["Dal Tadka", "Rice", "Mix Veg"] }
   },
   {
-    "date": "${getTodayString().slice(0, 8)}20",
-    "breakfast": { "time": "08:00 AM - 09:30 AM", "items": ["Aloo Paratha", "Curd"] }
+    "date": "${addDays(getTodayString(), 1)}",
+    "breakfast": { "items": ["Aloo Paratha", "Curd", "Tea"] },
+    "lunch": { "items": ["Kadhi Pakoda", "Rice"] },
+    "snacksBoys": { "items": ["Biscuits", "Tea"] },
+    "snacksGirls": { "items": ["Patties", "Milk"] },
+    "dinner": { "items": ["Paneer Butter Masala", "Naan", "Rice"] }
   }
 ]`;
 
@@ -66,7 +69,7 @@ export const JsonImportExport: React.FC = () => {
     setImporting(false);
 
     if (errors.length === 0) {
-      setImportStatus(`Successfully imported ${successCount} date menu(s) to Firestore!`);
+      setImportStatus(`Successfully saved ${successCount} date menu(s) to Firestore!`);
       setValidationResult(null);
       setJsonInput('');
     } else {
@@ -95,7 +98,7 @@ export const JsonImportExport: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `mess-menu-${exportDate}.json`;
+    a.download = `cumeals-menu-${exportDate}.json`;
     a.click();
   };
 
@@ -103,29 +106,29 @@ export const JsonImportExport: React.FC = () => {
     <div className="space-y-6 animate-fadeIn">
       
       {/* Tab Switcher */}
-      <div className="p-1.5 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-white dark:border-slate-800 shadow-sm flex items-center">
+      <div className="p-1.5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex items-center">
         <button
           onClick={() => setActiveTab('import')}
           className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
             activeTab === 'import'
-              ? 'bg-slate-900 dark:bg-indigo-600 text-white shadow-md'
-              : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
+              ? 'bg-indigo-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-slate-100'
           }`}
         >
           <Upload size={16} />
-          <span>Import JSON</span>
+          <span>Import Menu JSON</span>
         </button>
 
         <button
           onClick={() => { setActiveTab('export'); handleLoadExport(); }}
           className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
             activeTab === 'export'
-              ? 'bg-slate-900 dark:bg-indigo-600 text-white shadow-md'
-              : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
+              ? 'bg-indigo-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-slate-100'
           }`}
         >
           <Download size={16} />
-          <span>Export JSON</span>
+          <span>Export Menu JSON</span>
         </button>
       </div>
 
@@ -133,46 +136,46 @@ export const JsonImportExport: React.FC = () => {
         <div className="space-y-4">
           
           {/* Preset Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => { setJsonInput(sampleSingleJson); setValidationResult(null); }}
-              className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 hover:bg-slate-200"
+              className="px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 hover:bg-slate-700 transition-colors"
             >
-              <FileText size={14} />
-              <span>Load Single Sample</span>
+              <FileText size={14} className="text-indigo-400" />
+              <span>Load 1-Day Sample</span>
             </button>
 
             <button
               onClick={() => { setJsonInput(sampleBulkJson); setValidationResult(null); }}
-              className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 hover:bg-slate-200"
+              className="px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 hover:bg-slate-700 transition-colors"
             >
-              <FileText size={14} />
-              <span>Load Bulk Sample</span>
+              <FileText size={14} className="text-emerald-400" />
+              <span>Load Multi-Date Array Sample</span>
             </button>
           </div>
 
           {/* JSON Textarea */}
-          <div className="p-5 rounded-[28px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white dark:border-slate-800 shadow-sm">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
-              Paste Menu JSON (Single Date Object or Array of Objects)
+          <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-sm space-y-3">
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+              Paste Menu JSON (Single Date Object or Array of Date Objects)
             </label>
 
             <textarea
-              rows={12}
+              rows={14}
               value={jsonInput}
               onChange={(e) => setJsonInput(e.target.value)}
               placeholder="Paste your JSON payload here..."
-              className="w-full p-4 rounded-2xl bg-slate-950 text-emerald-400 font-mono text-xs focus:ring-2 focus:ring-indigo-500 outline-none leading-relaxed"
+              className="w-full p-4 rounded-2xl bg-slate-950 text-emerald-400 font-mono text-xs focus:ring-2 focus:ring-indigo-500 outline-none leading-relaxed border border-slate-800"
             />
 
-            <div className="mt-4 flex items-center justify-between">
+            <div className="flex items-center justify-between pt-1">
               <span className="text-[11px] text-slate-400">
-                Supports single day object or multi-day arrays
+                Supports date keys (YYYY-MM-DD) with food items arrays
               </span>
 
               <button
                 onClick={handleValidate}
-                className="px-5 py-2.5 rounded-xl bg-slate-900 dark:bg-indigo-600 text-white text-xs font-bold shadow-md hover:scale-102 active:scale-95 transition-all"
+                className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md active:scale-95 transition-all"
               >
                 Validate JSON
               </button>
@@ -181,31 +184,31 @@ export const JsonImportExport: React.FC = () => {
 
           {/* Validation Feedback & Preview */}
           {validationResult && (
-            <div className={`p-5 rounded-[28px] border shadow-sm ${
+            <div className={`p-5 sm:p-6 rounded-3xl border shadow-sm ${
               validationResult.isValid 
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-900 dark:text-emerald-100'
-                : 'bg-rose-500/10 border-rose-500/30 text-rose-900 dark:text-rose-100'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-100'
+                : 'bg-rose-500/10 border-rose-500/30 text-rose-100'
             }`}>
               <div className="flex items-center gap-2 mb-3">
                 {validationResult.isValid ? (
-                  <CheckCircle2 className="text-emerald-500 shrink-0" size={20} />
+                  <CheckCircle2 className="text-emerald-400 shrink-0" size={20} />
                 ) : (
-                  <AlertTriangle className="text-rose-500 shrink-0" size={20} />
+                  <AlertTriangle className="text-rose-400 shrink-0" size={20} />
                 )}
                 <h4 className="text-sm font-bold">
                   {validationResult.isValid
-                    ? `JSON Validated: ${validationResult.menus.length} date(s) detected`
+                    ? `JSON Validated: ${validationResult.menus.length} date menu(s) detected`
                     : 'JSON Validation Errors'}
                 </h4>
               </div>
 
               {validationResult.isValid ? (
                 <div>
-                  <div className="space-y-1.5 my-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 my-3">
                     {validationResult.menus.map((m, idx) => (
-                      <div key={idx} className="p-2.5 rounded-xl bg-white/60 dark:bg-slate-900/60 text-xs font-semibold flex items-center justify-between">
-                        <span>📅 Date: {m.date}</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">Ready to import ✓</span>
+                      <div key={idx} className="p-3 rounded-xl bg-slate-900/80 border border-emerald-500/30 text-xs font-semibold flex items-center justify-between">
+                        <span>📅 Date: {m.date || m.day}</span>
+                        <span className="text-emerald-400 font-bold text-[11px]">Valid ✓</span>
                       </div>
                     ))}
                   </div>
@@ -213,13 +216,13 @@ export const JsonImportExport: React.FC = () => {
                   <button
                     onClick={handleConfirmImport}
                     disabled={importing}
-                    className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all"
+                    className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg transition-all active:scale-98"
                   >
-                    {importing ? 'Writing to Firestore...' : `Confirm & Save ${validationResult.menus.length} Date(s) to Firestore`}
+                    {importing ? 'Saving to Firestore...' : `Confirm & Save ${validationResult.menus.length} Date Menu(s) to Firestore`}
                   </button>
                 </div>
               ) : (
-                <ul className="list-disc list-inside text-xs space-y-1">
+                <ul className="list-disc list-inside text-xs space-y-1 text-rose-300">
                   {validationResult.errors.map((err, i) => (
                     <li key={i}>{err}</li>
                   ))}
@@ -229,7 +232,7 @@ export const JsonImportExport: React.FC = () => {
           )}
 
           {importStatus && (
-            <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-900 dark:text-indigo-200 text-xs font-bold">
+            <div className="p-4 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-200 text-xs font-bold">
               {importStatus}
             </div>
           )}
@@ -238,48 +241,50 @@ export const JsonImportExport: React.FC = () => {
       ) : (
         /* Export Tab */
         <div className="space-y-4">
-          <div className="p-5 rounded-[28px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white dark:border-slate-800 shadow-sm space-y-4">
-            <div>
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Select Export Date
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="date"
-                  value={exportDate}
-                  onChange={(e) => setExportDate(e.target.value)}
-                  className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-sm font-bold text-slate-900 dark:text-slate-100 outline-none"
-                />
-                <button
-                  onClick={handleLoadExport}
-                  className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-indigo-600 text-white text-xs font-bold"
-                >
-                  Fetch JSON
-                </button>
+          <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                  Select Date to Export
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={exportDate}
+                    onChange={(e) => setExportDate(e.target.value)}
+                    className="px-3.5 py-2 rounded-xl bg-slate-800 text-sm font-bold text-slate-100 border border-slate-700 outline-none"
+                  />
+                  <button
+                    onClick={handleLoadExport}
+                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-colors"
+                  >
+                    {loadingExport ? 'Fetching...' : 'Fetch JSON'}
+                  </button>
+                </div>
               </div>
             </div>
 
             <textarea
-              rows={12}
+              rows={14}
               readOnly
               value={exportJson}
-              className="w-full p-4 rounded-2xl bg-slate-950 text-emerald-400 font-mono text-xs outline-none leading-relaxed"
+              className="w-full p-4 rounded-2xl bg-slate-950 text-emerald-400 font-mono text-xs outline-none leading-relaxed border border-slate-800"
             />
 
             <div className="flex items-center gap-3">
               <button
                 onClick={handleCopyExport}
-                className="flex-1 py-3 rounded-xl bg-slate-900 dark:bg-indigo-600 text-white text-xs font-bold flex items-center justify-center gap-1.5"
+                className="flex-1 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all"
               >
-                <Copy size={15} />
+                <Copy size={16} />
                 <span>Copy JSON</span>
               </button>
 
               <button
                 onClick={handleDownloadExport}
-                className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5"
+                className="flex-1 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold flex items-center justify-center gap-2 transition-all"
               >
-                <Download size={15} />
+                <Download size={16} />
                 <span>Download .json File</span>
               </button>
             </div>

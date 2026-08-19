@@ -151,7 +151,7 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-slate-400 italic">Tomorrow's menu not published yet.</p>
+              <p className="text-xs text-slate-400 italic">Tomorrow's menu will be updated soon.</p>
             )}
           </div>
         </div>

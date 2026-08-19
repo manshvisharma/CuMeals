@@ -49,41 +49,48 @@ export const TimingsManager: React.FC = () => {
         </div>
       )}
 
-      <div className="p-5 rounded-[28px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white dark:border-slate-800 shadow-sm space-y-4">
-        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-          <Clock size={16} />
-          <span>Global Meal Schedule</span>
-        </h3>
+      <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-sm space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+            <Clock size={16} className="text-indigo-400" />
+            <span>Global Meal Schedule</span>
+          </h3>
+          <span className="text-xs text-slate-400">
+            Sets default meal hours displayed in Timings and Menu
+          </span>
+        </div>
 
-        {[
-          { key: 'breakfast', label: 'Breakfast Timing' },
-          { key: 'lunch', label: 'Lunch Timing' },
-          { key: 'snacksBoys', label: 'Snacks (Boys) Timing' },
-          { key: 'snacksGirls', label: 'Snacks (Girls) Timing' },
-          { key: 'dinner', label: 'Dinner Timing' }
-        ].map(item => (
-          <div key={item.key}>
-            <label className="text-xs font-medium text-slate-500 dark:text-slate-400 block mb-1">
-              {item.label}
-            </label>
-            <input
-              type="text"
-              value={timings[item.key as keyof MealTimings] || ''}
-              onChange={(e) => handleChange(item.key as keyof MealTimings, e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-none text-xs text-slate-900 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-          </div>
-        ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+          {[
+            { key: 'breakfast', label: 'Breakfast Timing' },
+            { key: 'lunch', label: 'Lunch Timing' },
+            { key: 'snacksBoys', label: 'Snacks (Boys) Timing' },
+            { key: 'snacksGirls', label: 'Snacks (Girls) Timing' },
+            { key: 'dinner', label: 'Dinner Timing' }
+          ].map(item => (
+            <div key={item.key} className="p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/60">
+              <label className="text-xs font-bold text-slate-300 block mb-1.5">
+                {item.label}
+              </label>
+              <input
+                type="text"
+                value={timings[item.key as keyof MealTimings] || ''}
+                onChange={(e) => handleChange(item.key as keyof MealTimings, e.target.value)}
+                className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-100 font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+              />
+            </div>
+          ))}
+        </div>
 
-        <div>
-          <label className="text-xs font-medium text-slate-500 dark:text-slate-400 block mb-1">
-            Bottom Information Note
+        <div className="pt-2">
+          <label className="text-xs font-bold text-slate-300 block mb-1.5">
+            Bottom Information Note (Shown on Timings screen)
           </label>
           <textarea
             rows={2}
             value={timings.noticeNote || ''}
             onChange={(e) => handleChange('noticeNote', e.target.value)}
-            className="w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border-none text-xs text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
+            className="w-full p-3 rounded-2xl bg-slate-800/80 border border-slate-700 text-xs text-slate-100 font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
           />
         </div>
       </div>

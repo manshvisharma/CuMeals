@@ -52,8 +52,12 @@ export default function App() {
         <MandatoryAuthScreen onSuccess={() => {}} />
       )}
 
-      {/* Mobile Viewport Container - Dark Theme */}
-      <div className="w-full max-w-md min-h-screen sm:min-h-[844px] sm:max-h-[92vh] sm:rounded-[40px] bg-[#0B0F19] text-slate-100 sm:border sm:border-slate-800/80 sm:shadow-2xl relative flex flex-col justify-between overflow-y-auto no-scrollbar px-5 pt-6 pb-24">
+      {/* Responsive Container - Wide Desktop/Laptop for Admin, Compact Mobile for Student App */}
+      <div className={`w-full ${
+        isAdminView
+          ? 'max-w-6xl min-h-screen sm:min-h-[880px] sm:rounded-[32px] px-4 sm:px-8 pt-6 pb-12'
+          : 'max-w-md min-h-screen sm:min-h-[844px] sm:max-h-[92vh] sm:rounded-[40px] px-5 pt-6 pb-24'
+      } bg-[#0B0F19] text-slate-100 sm:border sm:border-slate-800/80 sm:shadow-2xl relative flex flex-col justify-between overflow-y-auto no-scrollbar transition-all duration-300`}>
         
         {/* Main Application Body */}
         <main className="flex-1 w-full overflow-hidden">
