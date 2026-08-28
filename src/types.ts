@@ -63,7 +63,7 @@ export type ActiveTab = 'menu' | 'timings' | 'timepass' | 'more';
 
 export interface LeaderboardEntry {
   id: string;
-  game: 'memory' | 'mathRush';
+  game: 'memory' | 'mathRush' | 'colorConfusion';
   playerName: string;
   userId?: string;
   userEmail?: string;

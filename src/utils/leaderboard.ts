@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs } from 'firebase/firestore';
+import { collection, addDoc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { LeaderboardEntry } from '../types';
 
@@ -113,19 +113,128 @@ async function syncLocalScoresToFirestore() {
 }
 
 /**
- * Gets top 10 global leaderboard scores for a game and timeframe.
- * Defaults to 'lifetime' view.
+ * Core processing logic to filter, deduplicate strictly by player name, and sort scores.
+ */
+export function processLeaderboardEntries(
+  allRaw: LeaderboardEntry[],
+  game: 'memory' | 'mathRush' | 'colorConfusion',
+  timeframe: 'weekly' | 'lifetime'
+): LeaderboardEntry[] {
+  const currentWeekKey = getISOWeekKey();
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+  // 1. Timeframe & Game filtering
+  const timeframeFiltered = allRaw.filter(e => {
+    if (e.game !== game) return false;
+    if (timeframe === 'lifetime') return true;
+
+    if (e.weekKey && e.weekKey === currentWeekKey) return true;
+    if (e.createdAt) {
+      const createdTime = new Date(e.createdAt).getTime();
+      if (!isNaN(createdTime)) {
+        return createdTime >= sevenDaysAgo;
+      }
+    }
+    return true;
+  });
+
+  // 2. Strict Deduplication by Name (so the same person isn't listed twice)
+  const playerBestMap = new Map<string, LeaderboardEntry>();
+
+  timeframeFiltered.forEach(entry => {
+    const nameKey = (entry.playerName || 'Student').trim().toLowerCase();
+    const existing = playerBestMap.get(nameKey);
+
+    if (!existing) {
+      playerBestMap.set(nameKey, entry);
+    } else {
+      if (game === 'mathRush' || game === 'colorConfusion') {
+        if (entry.score > existing.score) {
+          playerBestMap.set(nameKey, entry);
+        }
+      } else {
+        const entryMoves = entry.moves || entry.score;
+        const existingMoves = existing.moves || existing.score;
+        if (entryMoves < existingMoves) {
+          playerBestMap.set(nameKey, entry);
+        }
+      }
+    }
+  });
+
+  const uniqueLeaders = Array.from(playerBestMap.values());
+
+  // 3. Sort leaders globally
+  uniqueLeaders.sort((a, b) => {
+    if (game === 'memory') {
+      const movesA = a.moves || a.score;
+      const movesB = b.moves || b.score;
+      return movesA - movesB;
+    }
+    return b.score - a.score;
+  });
+
+  return uniqueLeaders.slice(0, 10);
+}
+
+/**
+ * Real-time listener for the leaderboard. Automatically updates the UI when ANY user plays!
+ */
+export function subscribeToLeaderboard(
+  game: 'memory' | 'mathRush' | 'colorConfusion',
+  timeframe: 'weekly' | 'lifetime',
+  onUpdate: (entries: LeaderboardEntry[]) => void
+): () => void {
+  try {
+    const q = query(collection(db, 'leaderboards'), where('game', '==', game));
+    
+    return onSnapshot(q, (snap) => {
+      const firestoreEntries: LeaderboardEntry[] = [];
+      snap.forEach(doc => {
+        firestoreEntries.push({ id: doc.id, ...doc.data() } as LeaderboardEntry);
+      });
+      
+      // Update global cache
+      cachedGlobalEntries = [...cachedGlobalEntries.filter(e => e.game !== game), ...firestoreEntries];
+      lastFetchTimestamp = Date.now();
+
+      // Mix with any local un-synced entries to be safe
+      let localEntries: LeaderboardEntry[] = [];
+      try {
+        const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (raw) localEntries = JSON.parse(raw);
+      } catch (e) {}
+
+      const combined = [...firestoreEntries, ...localEntries];
+      const processed = processLeaderboardEntries(combined, game, timeframe);
+      onUpdate(processed);
+    }, (error) => {
+      console.warn("Real-time leaderboard subscribe error (permissions issue?), falling back to local:", error);
+      // Fallback
+      let localEntries: LeaderboardEntry[] = [];
+      try {
+        const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (raw) localEntries = JSON.parse(raw);
+      } catch (e) {}
+      onUpdate(processLeaderboardEntries([...cachedGlobalEntries, ...localEntries], game, timeframe));
+    });
+  } catch (error) {
+    console.warn("Query error:", error);
+    return () => {};
+  }
+}
+
+/**
+ * Gets top 10 global leaderboard scores for a game and timeframe. (Legacy fallback)
  */
 export async function getGameLeaderboard(
-  game: 'memory' | 'mathRush',
+  game: 'memory' | 'mathRush' | 'colorConfusion',
   timeframe: 'weekly' | 'lifetime' = 'lifetime'
 ): Promise<LeaderboardEntry[]> {
-  // Refresh if cache is older than 5 seconds or empty
   if (Date.now() - lastFetchTimestamp > 5000 || cachedGlobalEntries.length === 0) {
     await prefetchLeaderboard();
   }
 
-  // Fallback to local storage entries if present (and recover from previous versions)
   let localEntries: LeaderboardEntry[] = [];
   try {
     const keys = ['mess_game_leaderboards_real_v3', 'mess_game_leaderboards_real_v4', 'mess_game_leaderboards_real_v5'];
@@ -142,76 +251,8 @@ export async function getGameLeaderboard(
     console.warn('Local storage parse error', e);
   }
 
-  // Deduplicate items by ID
-  const combinedMap = new Map<string, LeaderboardEntry>();
-  [...cachedGlobalEntries, ...localEntries].forEach(item => {
-    if (item && item.game === game && item.playerName) {
-      const uniqueId = item.id || `${item.playerName.trim().toLowerCase()}_${item.score}`;
-      combinedMap.set(uniqueId, item);
-    }
-  });
-
-  const allRaw = Array.from(combinedMap.values());
-  const currentWeekKey = getISOWeekKey();
-  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-
-  // Timeframe filtering
-  const timeframeFiltered = allRaw.filter(e => {
-    if (timeframe === 'lifetime') return true;
-
-    if (e.weekKey && e.weekKey === currentWeekKey) return true;
-    if (e.createdAt) {
-      const createdTime = new Date(e.createdAt).getTime();
-      if (!isNaN(createdTime)) {
-        return createdTime >= sevenDaysAgo;
-      }
-    }
-    return true;
-  });
-
-  // Group by distinct user identity (userId > userEmail > playerName)
-  const playerBestMap = new Map<string, LeaderboardEntry>();
-
-  timeframeFiltered.forEach(entry => {
-    // Distinct user key: prefer userId or userEmail, otherwise fallback to playerName
-    const userKey = entry.userId
-      ? `uid_${entry.userId}`
-      : entry.userEmail
-      ? `email_${entry.userEmail.toLowerCase()}`
-      : `name_${entry.playerName.trim().toLowerCase()}`;
-
-    const existing = playerBestMap.get(userKey);
-
-    if (!existing) {
-      playerBestMap.set(userKey, entry);
-    } else {
-      if (game === 'mathRush') {
-        if (entry.score > existing.score) {
-          playerBestMap.set(userKey, entry);
-        }
-      } else {
-        const entryMoves = entry.moves || entry.score;
-        const existingMoves = existing.moves || existing.score;
-        if (entryMoves < existingMoves) {
-          playerBestMap.set(userKey, entry);
-        }
-      }
-    }
-  });
-
-  const uniqueLeaders = Array.from(playerBestMap.values());
-
-  // Sort leaders globally
-  uniqueLeaders.sort((a, b) => {
-    if (game === 'memory') {
-      const movesA = a.moves || a.score;
-      const movesB = b.moves || b.score;
-      return movesA - movesB;
-    }
-    return b.score - a.score;
-  });
-
-  return uniqueLeaders.slice(0, 10);
+  const combined = [...cachedGlobalEntries, ...localEntries];
+  return processLeaderboardEntries(combined, game, timeframe);
 }
 
 /**
@@ -238,7 +279,7 @@ export async function saveGameScore(entry: Omit<LeaderboardEntry, 'id'>): Promis
   let isNewBest = false;
   if (!existingBest) {
     isNewBest = true;
-  } else if (entry.game === 'mathRush') {
+  } else if (entry.game === 'mathRush' || entry.game === 'colorConfusion') {
     if (entry.score > existingBest.score) {
       isNewBest = true;
     }

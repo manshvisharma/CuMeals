@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Gamepad2, Brain, Zap, Trophy, Flame, Calendar, Users } from 'lucide-react';
+import { Gamepad2, Brain, Zap, Trophy, Flame, Calendar, Users, Timer } from 'lucide-react';
 import { User as FirebaseUser } from 'firebase/auth';
 import { MemoryGame } from '../components/games/MemoryGame';
 import { MathRushGame } from '../components/games/MathRushGame';
-import { getGameLeaderboard } from '../utils/leaderboard';
+import { ColorConfusionGame } from '../components/games/ColorConfusionGame';
+import { getGameLeaderboard, subscribeToLeaderboard } from '../utils/leaderboard';
 import { LeaderboardEntry } from '../types';
 
 interface TimepassPageProps {
@@ -11,11 +12,12 @@ interface TimepassPageProps {
 }
 
 export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
-  const [activeGame, setActiveGame] = useState<'memory' | 'mathRush' | null>(null);
-  const [leaderboardTab, setLeaderboardTab] = useState<'mathRush' | 'memory'>('mathRush');
+  const [activeGame, setActiveGame] = useState<'memory' | 'mathRush' | 'colorConfusion' | null>(null);
+  const [leaderboardTab, setLeaderboardTab] = useState<'mathRush' | 'memory' | 'colorConfusion'>('mathRush');
   const [timeframe, setTimeframe] = useState<'weekly' | 'lifetime'>('lifetime');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState<boolean>(false);
+  const [weekEndString, setWeekEndString] = useState<string>('');
 
   const [customName, setCustomName] = useState<string>(() => {
     try {
@@ -42,17 +44,37 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
     setIsEditingName(false);
   };
 
-  const loadScores = async (tab: 'mathRush' | 'memory', tf: 'weekly' | 'lifetime') => {
-    setLoadingLeaderboard(true);
-    const data = await getGameLeaderboard(tab, tf);
-    setLeaderboard(data);
-    setLoadingLeaderboard(false);
-  };
-
+  // Weekly countdown logic
   useEffect(() => {
-    if (!activeGame) {
-      loadScores(leaderboardTab, timeframe);
-    }
+    const updateCountdown = () => {
+      const now = new Date();
+      const day = now.getDay();
+      const daysUntilSunday = day === 0 ? 0 : 7 - day;
+      const endOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysUntilSunday, 23, 59, 59, 999);
+      const diff = endOfWeek.getTime() - now.getTime();
+      
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const m = Math.floor((diff / 1000 / 60) % 60);
+      setWeekEndString(`${d}d ${h}h ${m}m`);
+    };
+    
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Real-time live scores listener
+  useEffect(() => {
+    if (activeGame) return;
+    setLoadingLeaderboard(true);
+    
+    const unsubscribe = subscribeToLeaderboard(leaderboardTab, timeframe, (entries) => {
+      setLeaderboard(entries);
+      setLoadingLeaderboard(false);
+    });
+
+    return () => unsubscribe();
   }, [leaderboardTab, timeframe, activeGame]);
 
   if (activeGame === 'memory') {
@@ -71,6 +93,18 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
     return (
       <div className="pb-32 pt-2">
         <MathRushGame
+          playerName={playerName}
+          userEmail={currentUser?.email || undefined}
+          onBack={() => setActiveGame(null)}
+        />
+      </div>
+    );
+  }
+
+  if (activeGame === 'colorConfusion') {
+    return (
+      <div className="pb-32 pt-2">
+        <ColorConfusionGame
           playerName={playerName}
           userEmail={currentUser?.email || undefined}
           onBack={() => setActiveGame(null)}
@@ -170,7 +204,38 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
           </div>
         </div>
 
-        {/* Game 2: Memory Game */}
+        {/* Game 2: Color Confusion */}
+        <div
+          onClick={() => setActiveGame('colorConfusion')}
+          className="relative overflow-hidden p-5 rounded-[28px] bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-transparent dark:from-pink-950/30 dark:via-rose-950/20 bg-white dark:bg-[#131722] border border-pink-200/50 dark:border-pink-900/40 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-lg transition-all cursor-pointer active:scale-[0.98] group"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3.5">
+              <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-pink-500 to-rose-500 text-white flex items-center justify-center shadow-md shadow-pink-500/25 group-hover:scale-105 transition-transform">
+                <Brain size={26} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                    Color Confusion
+                  </h3>
+                  <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-pink-500 text-white uppercase tracking-wider">
+                    NEW
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5 font-medium">
+                  Tap the color, not the word! 2s per round.
+                </p>
+              </div>
+            </div>
+
+            <button className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-pink-600 text-white text-xs font-bold shadow-sm group-hover:bg-pink-700 transition-colors">
+              Play
+            </button>
+          </div>
+        </div>
+
+        {/* Game 3: Memory Game */}
         <div
           onClick={() => setActiveGame('memory')}
           className="relative overflow-hidden p-5 rounded-[28px] bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-transparent dark:from-indigo-950/30 dark:via-purple-950/20 bg-white dark:bg-[#131722] border border-indigo-200/50 dark:border-indigo-900/40 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-lg transition-all cursor-pointer active:scale-[0.98] group"
@@ -252,7 +317,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
             </div>
 
             {/* Game Selection Tab */}
-            <div className="flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-bold">
+            <div className="flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 text-[10px] font-bold">
               <button
                 onClick={() => setLeaderboardTab('mathRush')}
                 className={`flex-1 py-1.5 rounded-xl transition-all text-center ${
@@ -261,7 +326,17 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
                     : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
               >
-                Math Rush
+                Math
+              </button>
+              <button
+                onClick={() => setLeaderboardTab('colorConfusion')}
+                className={`flex-1 py-1.5 rounded-xl transition-all text-center ${
+                  leaderboardTab === 'colorConfusion'
+                    ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                }`}
+              >
+                Colors
               </button>
               <button
                 onClick={() => setLeaderboardTab('memory')}
@@ -275,6 +350,14 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
               </button>
             </div>
           </div>
+          
+          {/* Weekly Countdown */}
+          {timeframe === 'weekly' && (
+            <div className="flex items-center justify-center gap-1.5 pt-1.5 pb-1 text-[11px] font-bold text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
+              <Timer size={12} />
+              <span>Week ends in {weekEndString}</span>
+            </div>
+          )}
         </div>
 
         {/* Rankboard List */}
@@ -339,7 +422,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
 
                   <div className="text-right">
                     <span className="text-sm font-black text-slate-900 dark:text-white block">
-                      {leaderboardTab === 'mathRush'
+                      {leaderboardTab === 'mathRush' || leaderboardTab === 'colorConfusion'
                         ? `${item.score.toLocaleString()} pts`
                         : `${item.moves || item.score} moves`
                       }
