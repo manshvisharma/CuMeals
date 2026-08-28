@@ -65,6 +65,7 @@ export interface LeaderboardEntry {
   id: string;
   game: 'memory' | 'mathRush';
   playerName: string;
+  userId?: string;
   userEmail?: string;
   score: number; // For MathRush: high score. For Memory: least moves (or score formula)
   moves?: number;

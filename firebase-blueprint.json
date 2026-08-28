@@ -55,6 +55,22 @@
         "active": { "type": "boolean" }
       },
       "required": ["title", "content"]
+    },
+    "LeaderboardEntry": {
+      "title": "Leaderboard Entry",
+      "description": "Game leaderboard score for Math Rush and Memory Match",
+      "type": "object",
+      "properties": {
+        "game": { "type": "string" },
+        "playerName": { "type": "string" },
+        "score": { "type": "number" },
+        "moves": { "type": "number" },
+        "level": { "type": "number" },
+        "date": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "weekKey": { "type": "string" }
+      },
+      "required": ["game", "playerName", "score"]
     }
   },
   "firestore": {
@@ -77,6 +93,14 @@
     "/admins/{uid}": {
       "schema": "object",
       "description": "Admin authorization documents"
+    },
+    "/leaderboards/{leaderboardId}": {
+      "schema": "LeaderboardEntry",
+      "description": "Global game scores for all players"
+    },
+    "/feedbacks/{feedbackId}": {
+      "schema": "object",
+      "description": "User feedback submissions"
     }
   }
 }

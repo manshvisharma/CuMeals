@@ -13,11 +13,34 @@ interface TimepassPageProps {
 export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
   const [activeGame, setActiveGame] = useState<'memory' | 'mathRush' | null>(null);
   const [leaderboardTab, setLeaderboardTab] = useState<'mathRush' | 'memory'>('mathRush');
-  const [timeframe, setTimeframe] = useState<'weekly' | 'lifetime'>('weekly');
+  const [timeframe, setTimeframe] = useState<'weekly' | 'lifetime'>('lifetime');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState<boolean>(false);
 
-  const playerName = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Hostel Student';
+  const [customName, setCustomName] = useState<string>(() => {
+    try {
+      return localStorage.getItem('cumeals_custom_nickname') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [isEditingName, setIsEditingName] = useState<boolean>(false);
+  const [tempNameInput, setTempNameInput] = useState<string>('');
+
+  const playerName = currentUser?.displayName || currentUser?.email?.split('@')[0] || customName || 'Hostel Student';
+
+  const saveNickname = () => {
+    const val = tempNameInput.trim();
+    if (val) {
+      setCustomName(val);
+      try {
+        localStorage.setItem('cumeals_custom_nickname', val);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+    setIsEditingName(false);
+  };
 
   const loadScores = async (tab: 'mathRush' | 'memory', tf: 'weekly' | 'lifetime') => {
     setLoadingLeaderboard(true);
@@ -73,14 +96,44 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
         </div>
 
         {/* Player Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-[#131722] shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 dark:border-slate-800">
-          <div className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center">
-            {playerName[0]?.toUpperCase() || 'P'}
+        {isEditingName ? (
+          <div className="flex items-center gap-1.5 p-1 rounded-full bg-white dark:bg-[#131722] border border-indigo-500">
+            <input
+              type="text"
+              autoFocus
+              placeholder="Your Name..."
+              value={tempNameInput}
+              onChange={(e) => setTempNameInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') saveNickname(); }}
+              className="px-2.5 py-1 text-xs bg-transparent text-slate-800 dark:text-slate-100 outline-none w-24 font-bold"
+            />
+            <button
+              onClick={saveNickname}
+              className="px-2.5 py-1 rounded-full bg-indigo-600 text-white text-[10px] font-bold"
+            >
+              Save
+            </button>
           </div>
-          <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 max-w-[80px] truncate">
-            {playerName}
-          </span>
-        </div>
+        ) : (
+          <button
+            onClick={() => {
+              if (!currentUser) {
+                setTempNameInput(customName || '');
+                setIsEditingName(true);
+              }
+            }}
+            title={currentUser ? 'Logged in user' : 'Click to edit your player nickname'}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-[#131722] shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 dark:border-slate-800 active:scale-95 transition-all cursor-pointer"
+          >
+            <div className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center">
+              {playerName[0]?.toUpperCase() || 'P'}
+            </div>
+            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 max-w-[80px] truncate">
+              {playerName}
+            </span>
+            {!currentUser && <span className="text-[9px] text-indigo-500 font-extrabold ml-0.5">Edit</span>}
+          </button>
+        )}
       </div>
 
       {/* Game Cards Hub */}
@@ -159,7 +212,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
             <div className="flex items-center gap-2">
               <Trophy size={20} className="text-amber-500" />
               <h2 className="font-bold text-slate-900 dark:text-white text-base">
-                Hostel Rankboard
+                Hostel Rankboard (Top 10)
               </h2>
             </div>
 
@@ -172,19 +225,8 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
 
           {/* Timeframe & Game Switcher Controls */}
           <div className="grid grid-cols-2 gap-2">
-            {/* Weekly vs Lifetime Tab */}
+            {/* Lifetime vs Weekly Tab */}
             <div className="flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-bold">
-              <button
-                onClick={() => setTimeframe('weekly')}
-                className={`flex-1 py-1.5 rounded-xl transition-all text-center flex items-center justify-center gap-1 ${
-                  timeframe === 'weekly'
-                    ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                }`}
-              >
-                <Calendar size={12} />
-                <span>Weekly</span>
-              </button>
               <button
                 onClick={() => setTimeframe('lifetime')}
                 className={`flex-1 py-1.5 rounded-xl transition-all text-center flex items-center justify-center gap-1 ${
@@ -195,6 +237,17 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
               >
                 <Flame size={12} />
                 <span>Lifetime</span>
+              </button>
+              <button
+                onClick={() => setTimeframe('weekly')}
+                className={`flex-1 py-1.5 rounded-xl transition-all text-center flex items-center justify-center gap-1 ${
+                  timeframe === 'weekly'
+                    ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                }`}
+              >
+                <Calendar size={12} />
+                <span>Weekly</span>
               </button>
             </div>
 

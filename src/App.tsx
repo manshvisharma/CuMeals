@@ -14,6 +14,7 @@ import { subscribeToAuth } from './firebase/auth';
 import { useTheme } from './hooks/useTheme';
 import { isUserAdmin } from './utils/adminUtils';
 import { User } from 'firebase/auth';
+import { prefetchLeaderboard } from './utils/leaderboard';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('menu');
@@ -31,6 +32,9 @@ export default function App() {
   useTheme();
 
   useEffect(() => {
+    // Background prefetch global leaderboard scores for instant load
+    prefetchLeaderboard();
+
     // Subscribe to Firebase Auth
     const unsubscribe = subscribeToAuth((currentUser) => {
       setUser(currentUser);
