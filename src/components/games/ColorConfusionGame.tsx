@@ -20,10 +20,15 @@ const COLORS = [
 export const ColorConfusionGame: React.FC<ColorConfusionGameProps> = ({ playerName, userEmail, onBack }) => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [score, setScore] = useState<number>(0);
-  const [timeLeft, setTimeLeft] = useState<number>(2000); // 2 seconds per round
+  const [maxTime, setMaxTime] = useState<number>(2000);
+  const [timeLeft, setTimeLeft] = useState<number>(2000);
   
   const [targetWord, setTargetWord] = useState(COLORS[0]);
   const [targetColor, setTargetColor] = useState(COLORS[1]);
+  const [distractorBg, setDistractorBg] = useState<typeof COLORS[0] | null>(null);
+  const [distractorShape, setDistractorShape] = useState<string>('rounded-3xl');
+  const [distractorRotate, setDistractorRotate] = useState<string>('rotate-0');
+  
   const [options, setOptions] = useState<typeof COLORS>([]);
   
   const [gameOver, setGameOver] = useState<boolean>(false);
@@ -33,8 +38,8 @@ export const ColorConfusionGame: React.FC<ColorConfusionGameProps> = ({ playerNa
   // Timer reference
   const [lastTick, setLastTick] = useState<number>(Date.now());
 
-  const generateRound = useCallback(() => {
-    // Pick random text and color (usually different to create confusion)
+  const generateRound = useCallback((currentScore: number) => {
+    // Pick random text and color
     const randomWordIdx = Math.floor(Math.random() * COLORS.length);
     let randomColorIdx = Math.floor(Math.random() * COLORS.length);
     
@@ -49,7 +54,39 @@ export const ColorConfusionGame: React.FC<ColorConfusionGameProps> = ({ playerNa
     setTargetWord(word);
     setTargetColor(color);
     
-    // Generate 4 options including the correct one (which is targetColor.name)
+    // Level scaling logic
+    // 1. Decrease time
+    const newMaxTime = Math.max(800, 2000 - (currentScore * 50));
+    setMaxTime(newMaxTime);
+    setTimeLeft(newMaxTime);
+    
+    // 2. Add visual distractors as score goes up
+    if (currentScore > 5 && Math.random() > 0.4) {
+      // Rotate the text
+      const rotations = ['rotate-90', '-rotate-90', 'rotate-180', 'rotate-45', '-rotate-45'];
+      setDistractorRotate(rotations[Math.floor(Math.random() * rotations.length)]);
+    } else {
+      setDistractorRotate('rotate-0');
+    }
+
+    if (currentScore > 10 && Math.random() > 0.3) {
+      // Change the container shape
+      const shapes = ['rounded-full', 'rounded-[40px]', 'rounded-none'];
+      setDistractorShape(shapes[Math.floor(Math.random() * shapes.length)]);
+    } else {
+      setDistractorShape('rounded-3xl');
+    }
+
+    if (currentScore > 15 && Math.random() > 0.3) {
+      // Add a confusing background color that is different from targetColor
+      let bgIdx = Math.floor(Math.random() * COLORS.length);
+      if (bgIdx === randomColorIdx) bgIdx = (bgIdx + 1) % COLORS.length;
+      setDistractorBg(COLORS[bgIdx]);
+    } else {
+      setDistractorBg(null);
+    }
+    
+    // Generate 4 options including the correct one
     const selectedOptions = [color];
     const available = COLORS.filter(c => c.name !== color.name);
     
@@ -60,7 +97,6 @@ export const ColorConfusionGame: React.FC<ColorConfusionGameProps> = ({ playerNa
     // Shuffle final options
     setOptions(selectedOptions.sort(() => Math.random() - 0.5));
     
-    setTimeLeft(2000); // Reset timer to 2 seconds
     setLastTick(Date.now());
   }, []);
 
@@ -69,33 +105,34 @@ export const ColorConfusionGame: React.FC<ColorConfusionGameProps> = ({ playerNa
     setGameOver(false);
     setHighScoreBeaten(false);
     setIsPlaying(true);
-    generateRound();
+    generateRound(0);
   };
 
   const handleAnswer = (selectedName: string) => {
     if (!isPlaying || gameOver) return;
     
-    // We match the visual color (targetColor), not the text
     if (selectedName === targetColor.name) {
-      setScore(s => s + 1);
-      generateRound();
+      const nextScore = score + 1;
+      setScore(nextScore);
+      generateRound(nextScore);
     } else {
-      endGame();
+      endGame(score);
     }
   };
 
-  const endGame = async () => {
+  const endGame = async (finalScore: number) => {
     setIsPlaying(false);
     setGameOver(true);
+    setTimeLeft(0);
     
-    if (score > 0) {
+    if (finalScore > 0) {
       setSavingScore(true);
       try {
         const isNewBest = await saveGameScore({
-          game: 'colorConfusion',
+          game: 'colorConfusion_v2',
           playerName: playerName || 'Student',
           userEmail: userEmail,
-          score: score,
+          score: finalScore,
           date: new Date().toISOString()
         });
         setHighScoreBeaten(isNewBest);
@@ -109,7 +146,6 @@ export const ColorConfusionGame: React.FC<ColorConfusionGameProps> = ({ playerNa
   // Timer Loop
   useEffect(() => {
     if (!isPlaying || gameOver) return;
-
     const interval = setInterval(() => {
       const now = Date.now();
       const delta = now - lastTick;
@@ -118,7 +154,7 @@ export const ColorConfusionGame: React.FC<ColorConfusionGameProps> = ({ playerNa
         const newTime = prev - delta;
         if (newTime <= 0) {
           clearInterval(interval);
-          endGame();
+          endGame(score);
           return 0;
         }
         return newTime;
@@ -127,7 +163,7 @@ export const ColorConfusionGame: React.FC<ColorConfusionGameProps> = ({ playerNa
     }, 50);
 
     return () => clearInterval(interval);
-  }, [isPlaying, gameOver, lastTick]);
+  }, [isPlaying, gameOver, lastTick, score]);
 
   return (
     <div className="w-full flex flex-col items-center">
@@ -143,7 +179,7 @@ export const ColorConfusionGame: React.FC<ColorConfusionGameProps> = ({ playerNa
           <BrainCircuit className="text-pink-500" size={24} />
           <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Color Confusion</h2>
         </div>
-        <div className="w-10"></div> {/* Spacer for centering */}
+        <div className="w-10"></div>
       </div>
 
       {/* Start Screen */}
@@ -154,8 +190,8 @@ export const ColorConfusionGame: React.FC<ColorConfusionGameProps> = ({ playerNa
           </div>
           <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Tap the COLOR, not the word!</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 text-center mb-6 leading-relaxed">
-            If you see the word <span className="font-bold text-red-500">BLUE</span>, tap the <strong>RED</strong> button.<br/>
-            You only have <strong>2 seconds</strong> per round.
+            If you see the word <span className="font-bold text-red-500">BLUE</span>, tap the <strong>RED</strong> button.<br/><br/>
+            <strong>Beware:</strong> It gets faster and weirder as you score higher!
           </p>
           <button
             onClick={startGame}
@@ -213,17 +249,19 @@ export const ColorConfusionGame: React.FC<ColorConfusionGameProps> = ({ playerNa
             <div className="flex-1 ml-4 bg-slate-200 dark:bg-slate-800 h-3 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-pink-500 rounded-full transition-all duration-75 ease-linear"
-                style={{ width: `${(timeLeft / 2000) * 100}%` }}
+                style={{ width: `${Math.max(0, (timeLeft / maxTime) * 100)}%` }}
               ></div>
             </div>
           </div>
 
-          {/* The Confusion Word */}
-          <div className="w-full aspect-square max-h-[250px] bg-white dark:bg-[#131722] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-center mb-8 relative">
-            <div className="absolute top-4 left-0 w-full text-center text-xs font-bold text-slate-400">WHAT COLOR IS THIS?</div>
+          {/* The Confusion Word Container */}
+          <div className={`w-full aspect-square max-h-[250px] flex items-center justify-center mb-8 relative transition-all duration-300 shadow-sm border border-slate-100 dark:border-slate-800 ${distractorShape} ${distractorBg ? distractorBg.bgClass : 'bg-white dark:bg-[#131722]'}`}>
+            <div className={`absolute top-4 left-0 w-full text-center text-xs font-bold ${distractorBg ? 'text-white/60' : 'text-slate-400'}`}>
+              WHAT COLOR IS THIS TEXT?
+            </div>
             <span 
-              className={`text-5xl md:text-6xl font-black tracking-tight ${targetColor.textClass}`}
-              style={{ textShadow: '0 4px 20px rgba(0,0,0,0.05)' }}
+              className={`text-5xl md:text-6xl font-black tracking-tight transition-transform duration-200 ${targetColor.textClass} ${distractorRotate}`}
+              style={{ textShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
             >
               {targetWord.name}
             </span>

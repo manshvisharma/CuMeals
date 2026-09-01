@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cumeals-pwa-v7';
+const CACHE_NAME = 'cumeals-pwa-v9';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

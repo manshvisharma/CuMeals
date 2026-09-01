@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Gamepad2, Brain, Zap, Trophy, Flame, Calendar, Users, Timer } from 'lucide-react';
+import { Gamepad2, Brain, Zap, Trophy, Flame, Calendar, Users, Timer, Clock } from 'lucide-react';
 import { User as FirebaseUser } from 'firebase/auth';
 import { MemoryGame } from '../components/games/MemoryGame';
 import { MathRushGame } from '../components/games/MathRushGame';
@@ -12,8 +12,8 @@ interface TimepassPageProps {
 }
 
 export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
-  const [activeGame, setActiveGame] = useState<'memory' | 'mathRush' | 'colorConfusion' | null>(null);
-  const [leaderboardTab, setLeaderboardTab] = useState<'mathRush' | 'memory' | 'colorConfusion'>('mathRush');
+  const [activeGame, setActiveGame] = useState<'memory_v3' | 'mathRush' | 'colorConfusion_v2' | null>(null);
+  const [leaderboardTab, setLeaderboardTab] = useState<'mathRush' | 'memory_v3' | 'colorConfusion_v2'>('mathRush');
   const [timeframe, setTimeframe] = useState<'weekly' | 'lifetime'>('lifetime');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState<boolean>(false);
@@ -77,7 +77,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
     return () => unsubscribe();
   }, [leaderboardTab, timeframe, activeGame]);
 
-  if (activeGame === 'memory') {
+  if (activeGame === 'memory_v3') {
     return (
       <div className="pb-32 pt-2">
         <MemoryGame
@@ -101,7 +101,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
     );
   }
 
-  if (activeGame === 'colorConfusion') {
+  if (activeGame === 'colorConfusion_v2') {
     return (
       <div className="pb-32 pt-2">
         <ColorConfusionGame
@@ -206,7 +206,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
 
         {/* Game 2: Color Confusion */}
         <div
-          onClick={() => setActiveGame('colorConfusion')}
+          onClick={() => setActiveGame('colorConfusion_v2')}
           className="relative overflow-hidden p-5 rounded-[28px] bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-transparent dark:from-pink-950/30 dark:via-rose-950/20 bg-white dark:bg-[#131722] border border-pink-200/50 dark:border-pink-900/40 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-lg transition-all cursor-pointer active:scale-[0.98] group"
         >
           <div className="flex items-center justify-between">
@@ -237,7 +237,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
 
         {/* Game 3: Memory Game */}
         <div
-          onClick={() => setActiveGame('memory')}
+          onClick={() => setActiveGame('memory_v3')}
           className="relative overflow-hidden p-5 rounded-[28px] bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-transparent dark:from-indigo-950/30 dark:via-purple-950/20 bg-white dark:bg-[#131722] border border-indigo-200/50 dark:border-indigo-900/40 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-lg transition-all cursor-pointer active:scale-[0.98] group"
         >
           <div className="flex items-center justify-between">
@@ -329,9 +329,9 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
                 Math
               </button>
               <button
-                onClick={() => setLeaderboardTab('colorConfusion')}
+                onClick={() => setLeaderboardTab('colorConfusion_v2')}
                 className={`flex-1 py-1.5 rounded-xl transition-all text-center ${
-                  leaderboardTab === 'colorConfusion'
+                  leaderboardTab === 'colorConfusion_v2'
                     ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs'
                     : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
@@ -339,9 +339,9 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
                 Colors
               </button>
               <button
-                onClick={() => setLeaderboardTab('memory')}
+                onClick={() => setLeaderboardTab('memory_v3')}
                 className={`flex-1 py-1.5 rounded-xl transition-all text-center ${
-                  leaderboardTab === 'memory'
+                  leaderboardTab === 'memory_v3'
                     ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs'
                     : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
@@ -422,14 +422,20 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
 
                   <div className="text-right">
                     <span className="text-sm font-black text-slate-900 dark:text-white block">
-                      {leaderboardTab === 'mathRush' || leaderboardTab === 'colorConfusion'
+                      {leaderboardTab === 'mathRush' || leaderboardTab === 'colorConfusion_v2'
                         ? `${(item.score || 0).toLocaleString()} pts`
                         : `${item.moves || item.score || 0} moves`
                       }
                     </span>
                     {leaderboardTab === 'mathRush' && item.level && (
-                      <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">
+                      <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold block">
                         Level {item.level}
+                      </span>
+                    )}
+                    {leaderboardTab === 'memory_v3' && item.timeTaken !== undefined && (
+                      <span className="text-[10px] text-rose-500 font-bold flex items-center gap-0.5 justify-end mt-0.5">
+                        <Clock size={10} />
+                        {Math.floor(item.timeTaken / 60)}:{(item.timeTaken % 60).toString().padStart(2, '0')}
                       </span>
                     )}
                   </div>

@@ -63,12 +63,13 @@ export type ActiveTab = 'menu' | 'timings' | 'timepass' | 'more';
 
 export interface LeaderboardEntry {
   id: string;
-  game: 'memory' | 'mathRush' | 'colorConfusion';
+  game: 'memory' | 'mathRush' | 'colorConfusion' | 'memory_v2' | 'memory_v3' | 'colorConfusion_v2';
   playerName: string;
   userId?: string;
   userEmail?: string;
   score: number; // For MathRush: high score. For Memory: least moves (or score formula)
   moves?: number;
+  timeTaken?: number;
   level?: number;
   date: string;
   createdAt?: string;

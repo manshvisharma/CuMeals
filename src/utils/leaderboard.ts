@@ -117,7 +117,7 @@ async function syncLocalScoresToFirestore() {
  */
 export function processLeaderboardEntries(
   allRaw: LeaderboardEntry[],
-  game: 'memory' | 'mathRush' | 'colorConfusion',
+  game: 'memory' | 'mathRush' | 'colorConfusion' | 'memory_v2' | 'memory_v3' | 'colorConfusion_v2',
   timeframe: 'weekly' | 'lifetime'
 ): LeaderboardEntry[] {
   const currentWeekKey = getISOWeekKey();
@@ -148,7 +148,7 @@ export function processLeaderboardEntries(
     if (!existing) {
       playerBestMap.set(nameKey, entry);
     } else {
-      if (game === 'mathRush' || game === 'colorConfusion') {
+      if (game === 'mathRush' || game === 'colorConfusion' || game === 'colorConfusion_v2') {
         if (entry.score > existing.score) {
           playerBestMap.set(nameKey, entry);
         }
@@ -157,6 +157,12 @@ export function processLeaderboardEntries(
         const existingMoves = existing.moves || existing.score;
         if (entryMoves < existingMoves) {
           playerBestMap.set(nameKey, entry);
+        } else if (entryMoves === existingMoves) {
+          const entryTime = entry.timeTaken || Infinity;
+          const existingTime = existing.timeTaken || Infinity;
+          if (entryTime < existingTime) {
+            playerBestMap.set(nameKey, entry);
+          }
         }
       }
     }
@@ -166,9 +172,12 @@ export function processLeaderboardEntries(
 
   // 3. Sort leaders globally
   uniqueLeaders.sort((a, b) => {
-    if (game === 'memory') {
+    if (game === 'memory' || game === 'memory_v2' || game === 'memory_v3') {
       const movesA = a.moves || a.score;
       const movesB = b.moves || b.score;
+      if (movesA === movesB) {
+        return (a.timeTaken || Infinity) - (b.timeTaken || Infinity);
+      }
       return movesA - movesB;
     }
     return b.score - a.score;
@@ -181,7 +190,7 @@ export function processLeaderboardEntries(
  * Real-time listener for the leaderboard. Automatically updates the UI when ANY user plays!
  */
 export function subscribeToLeaderboard(
-  game: 'memory' | 'mathRush' | 'colorConfusion',
+  game: 'memory' | 'mathRush' | 'colorConfusion' | 'memory_v2' | 'memory_v3' | 'colorConfusion_v2',
   timeframe: 'weekly' | 'lifetime',
   onUpdate: (entries: LeaderboardEntry[]) => void
 ): () => void {
@@ -228,7 +237,7 @@ export function subscribeToLeaderboard(
  * Gets top 10 global leaderboard scores for a game and timeframe. (Legacy fallback)
  */
 export async function getGameLeaderboard(
-  game: 'memory' | 'mathRush' | 'colorConfusion',
+  game: 'memory' | 'mathRush' | 'colorConfusion' | 'memory_v2' | 'memory_v3' | 'colorConfusion_v2',
   timeframe: 'weekly' | 'lifetime' = 'lifetime'
 ): Promise<LeaderboardEntry[]> {
   if (Date.now() - lastFetchTimestamp > 5000 || cachedGlobalEntries.length === 0) {
@@ -279,15 +288,19 @@ export async function saveGameScore(entry: Omit<LeaderboardEntry, 'id'>): Promis
   let isNewBest = false;
   if (!existingBest) {
     isNewBest = true;
-  } else if (entry.game === 'mathRush' || entry.game === 'colorConfusion') {
+  } else if (entry.game === 'mathRush' || entry.game === 'colorConfusion' || entry.game === 'colorConfusion_v2') {
     if (entry.score > existingBest.score) {
       isNewBest = true;
     }
-  } else if (entry.game === 'memory') {
+  } else if (entry.game === 'memory' || entry.game === 'memory_v2' || entry.game === 'memory_v3') {
     const newMoves = entry.moves || entry.score;
     const existingMoves = existingBest.moves || existingBest.score;
     if (newMoves < existingMoves) {
       isNewBest = true;
+    } else if (newMoves === existingMoves) {
+      if ((entry.timeTaken || Infinity) < (existingBest.timeTaken || Infinity)) {
+        isNewBest = true;
+      }
     }
   }
 
