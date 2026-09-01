@@ -273,7 +273,7 @@ export async function saveGameScore(entry: Omit<LeaderboardEntry, 'id'>): Promis
     if (e.userId && currentUserId) {
       return e.userId === currentUserId;
     }
-    return e.playerName.trim().toLowerCase() === entry.playerName.trim().toLowerCase();
+    return (e.playerName || '').trim().toLowerCase() === (entry.playerName || '').trim().toLowerCase();
   });
 
   let isNewBest = false;

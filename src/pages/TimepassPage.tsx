@@ -376,7 +376,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
           <div className="space-y-2">
             {leaderboard.map((item, index) => {
               const rank = index + 1;
-              const isCurrentUser = item.playerName.toLowerCase().trim() === playerName.toLowerCase().trim();
+              const isCurrentUser = (item.playerName || '').toLowerCase().trim() === (playerName || '').toLowerCase().trim();
 
               return (
                 <div
@@ -423,8 +423,8 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
                   <div className="text-right">
                     <span className="text-sm font-black text-slate-900 dark:text-white block">
                       {leaderboardTab === 'mathRush' || leaderboardTab === 'colorConfusion'
-                        ? `${item.score.toLocaleString()} pts`
-                        : `${item.moves || item.score} moves`
+                        ? `${(item.score || 0).toLocaleString()} pts`
+                        : `${item.moves || item.score || 0} moves`
                       }
                     </span>
                     {leaderboardTab === 'mathRush' && item.level && (
