@@ -11,6 +11,10 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
+        devOptions: {
+          enabled: true,
+          type: 'module'
+        },
         manifest: {
           id: "cumeals-app-pwa",
           name: "CuMeals - Hostel Mess Menu",
