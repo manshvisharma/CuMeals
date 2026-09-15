@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, BellOff, CheckCircle2, AlertTriangle, Send, Smartphone, Sparkles, Loader2 } from 'lucide-react';
-import { getPushStatus, subscribeToPushNotifications, unsubscribeFromPushNotifications, sendTestPushAlert, PushStatus } from '../utils/pushNotifications';
+import { Bell, BellOff, CheckCircle2, AlertTriangle, Smartphone, Sparkles, Loader2, Check } from 'lucide-react';
+import { getPushStatus, subscribeToPushNotifications, unsubscribeFromPushNotifications, PushStatus } from '../utils/pushNotifications';
 import { User } from 'firebase/auth';
 
 interface NotificationSettingsCardProps {
@@ -27,7 +27,7 @@ export const NotificationSettingsCard: React.FC<NotificationSettingsCardProps> =
     if (result.success) {
       setMessage({
         type: 'success',
-        text: 'Push notifications activated! You will receive alerts even when CuMeals is closed.'
+        text: 'Push notifications activated! You will receive meal timings, menu alerts, and closing reminders.'
       });
     } else {
       setMessage({
@@ -49,20 +49,6 @@ export const NotificationSettingsCard: React.FC<NotificationSettingsCardProps> =
     });
   };
 
-  const handleTestNotification = async () => {
-    setLoading(true);
-    setMessage(null);
-    const res = await sendTestPushAlert(
-      'CuMeals Mess Alert 🔔',
-      'Test notification delivered successfully! Your lock screen alerts are active.'
-    );
-    setLoading(false);
-    setMessage({
-      type: res.success ? 'success' : 'error',
-      text: res.message
-    });
-  };
-
   return (
     <div className="rounded-[26px] bg-white dark:bg-[#131722] border border-slate-100 dark:border-slate-800/80 p-5 shadow-sm space-y-4">
       {/* Header */}
@@ -75,13 +61,14 @@ export const NotificationSettingsCard: React.FC<NotificationSettingsCardProps> =
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <span>Push Notifications</span>
               {status.isSubscribed && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-extrabold">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-extrabold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Active
                 </span>
               )}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Lock screen & notification center alerts
+              Automatic lock screen & notification center alerts
             </p>
           </div>
         </div>
@@ -96,7 +83,7 @@ export const NotificationSettingsCard: React.FC<NotificationSettingsCardProps> =
 
       {/* Description */}
       <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-        Receive real-time notifications for meal timings, upcoming menus, emergency mess notices, and game challenges even when the app is completely closed.
+        Receive automatic notifications before 1 hour of meal start, when meal begins, and 30 mins before the mess closes, even when CuMeals is closed.
       </p>
 
       {/* iOS Special Note */}
@@ -104,46 +91,41 @@ export const NotificationSettingsCard: React.FC<NotificationSettingsCardProps> =
         <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2.5">
           <Smartphone size={18} className="shrink-0 mt-0.5 text-amber-500" />
           <div>
-            <p className="font-bold">iOS Home Screen Requirement</p>
+            <p className="font-bold">iPhone / iPad Setup Step</p>
             <p className="text-[11px] mt-0.5 text-amber-800 dark:text-amber-400/90 leading-normal">
-              Apple requires you to tap <strong>Share</strong> and select <strong>"Add to Home Screen"</strong> first. Open CuMeals from your home screen to enable push notifications.
+              Apple requires you to tap <strong>Share</strong> and select <strong>"Add to Home Screen"</strong> first. Open CuMeals from your home screen to enable notifications.
             </p>
           </div>
         </div>
       )}
 
-      {/* Action Buttons */}
+      {/* Action Controls (Clean button without test notification button) */}
       <div className="flex flex-wrap items-center gap-2 pt-1">
         {!status.isSubscribed ? (
           <button
             onClick={handleSubscribe}
             disabled={loading}
-            className="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-indigo-600/30 active:scale-95 transition-all disabled:opacity-50"
+            className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-indigo-600/30 active:scale-95 transition-all disabled:opacity-50"
           >
             {loading ? <Loader2 size={15} className="animate-spin" /> : <Bell size={15} strokeWidth={2.4} />}
-            <span>Enable Push Notifications</span>
+            <span>Enable Automatic Meal Alerts</span>
           </button>
         ) : (
-          <>
-            <button
-              onClick={handleTestNotification}
-              disabled={loading}
-              className="flex-1 py-2.5 px-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/60 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
-            >
-              {loading ? <Loader2 size={15} className="animate-spin" /> : <Send size={14} />}
-              <span>Send Test Notification</span>
-            </button>
-
+          <div className="w-full flex items-center justify-between gap-3 p-3 rounded-2xl bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20">
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 size={16} />
+              <span>Receiving Automatic Schedule Alerts</span>
+            </div>
             <button
               onClick={handleUnsubscribe}
               disabled={loading}
-              className="py-2.5 px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all"
+              className="py-1.5 px-3 rounded-xl bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 font-bold text-xs flex items-center gap-1 active:scale-95 transition-all"
               title="Turn off notifications"
             >
-              <BellOff size={15} />
-              <span className="hidden sm:inline">Turn Off</span>
+              <BellOff size={13} />
+              <span>Turn Off</span>
             </button>
-          </>
+          </div>
         )}
       </div>
 

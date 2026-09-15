@@ -12,6 +12,16 @@ export interface PushStatus {
   isSubscribed: boolean;
 }
 
+export function detectIsIOS(): boolean {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  const platform = navigator.platform || '';
+  const isAppleMobile = /iPad|iPhone|iPod/i.test(ua) || /iPad|iPhone|iPod/i.test(platform);
+  const isIPadOS = platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+  const isWebKitIOS = /AppleWebKit/i.test(ua) && /Mobile/i.test(ua) && !/Android/i.test(ua);
+  return isAppleMobile || isIPadOS || isWebKitIOS;
+}
+
 // Convert VAPID base64 string to Uint8Array for PushManager
 export function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -41,7 +51,7 @@ export function getPushStatus(): PushStatus {
     };
   }
 
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+  const isIOS = detectIsIOS();
   const isStandalone = 
     window.matchMedia('(display-mode: standalone)').matches || 
     (navigator as any).standalone === true;
@@ -60,6 +70,25 @@ export function getPushStatus(): PushStatus {
   };
 }
 
+// Normalize subscriber object and device type
+export function normalizeSubscriber(sub: any): any {
+  if (!sub) return null;
+  const endpoint = String(sub.endpoint || '').toLowerCase();
+  const rawType = String(sub.deviceType || '').toLowerCase();
+
+  let deviceType: 'ios' | 'android' | 'desktop' = 'desktop';
+  if (rawType === 'ios' || endpoint.includes('apple.com') || endpoint.includes('push.apple.com')) {
+    deviceType = 'ios';
+  } else if (rawType === 'android' || endpoint.includes('fcm.googleapis.com') || endpoint.includes('google.com')) {
+    deviceType = 'android';
+  }
+
+  return {
+    ...sub,
+    deviceType
+  };
+}
+
 // Subscribe to push notifications
 export async function subscribeToPushNotifications(currentUser?: User | null): Promise<{
   success: boolean;
@@ -74,7 +103,7 @@ export async function subscribeToPushNotifications(currentUser?: User | null): P
     return {
       success: false,
       requiresPWAInstall: true,
-      error: 'On iPhone / iPad, Apple requires installing CuMeals to your Home Screen first before enabling notifications.'
+      error: 'On iPhone / iPad, Apple requires installing CuMeals to your Home Screen first (Tap Share → Add to Home Screen) before enabling notifications.'
     };
   }
 
@@ -102,7 +131,6 @@ export async function subscribeToPushNotifications(currentUser?: User | null): P
     try {
       registration = await navigator.serviceWorker.ready;
     } catch {
-      // In case registration wasn't triggered yet
       registration = await navigator.serviceWorker.register('/sw.js');
       await navigator.serviceWorker.ready;
     }
@@ -117,9 +145,13 @@ export async function subscribeToPushNotifications(currentUser?: User | null): P
       });
     }
 
-    // 4. Save subscription to Firestore for backend dispatch
+    // 4. Determine device type
+    const isIOSDevice = status.isIOS || detectIsIOS() || subscription.endpoint.includes('apple.com');
+    const isAndroidDevice = !isIOSDevice && (/Android/i.test(navigator.userAgent) || subscription.endpoint.includes('fcm.googleapis.com'));
+    const deviceType: 'ios' | 'android' | 'desktop' = isIOSDevice ? 'ios' : (isAndroidDevice ? 'android' : 'desktop');
+
+    // 5. Clean document id for Firestore
     const subJSON = subscription.toJSON();
-    // Safe base64url clean document id for Firestore (no slashes, pluses or equals)
     const cleanId = btoa(encodeURIComponent(subscription.endpoint))
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
@@ -127,10 +159,6 @@ export async function subscribeToPushNotifications(currentUser?: User | null): P
       .slice(-40);
     
     const endpointHash = cleanId || `sub_${Date.now()}`;
-    
-    const deviceType = status.isIOS 
-      ? 'ios' 
-      : (/Android/i.test(navigator.userAgent) ? 'android' : 'desktop');
 
     const subData = {
       endpoint: subscription.endpoint,
@@ -152,7 +180,7 @@ export async function subscribeToPushNotifications(currentUser?: User | null): P
       console.warn('Firestore subscription sync error:', dbErr?.message);
     }
 
-    // Also register with server backend API directly so it's always tracked
+    // Also register with server backend API directly
     try {
       await fetch('/api/register-subscription', {
         method: 'POST',
@@ -174,19 +202,20 @@ export async function subscribeToPushNotifications(currentUser?: User | null): P
     localStorage.setItem('cumeals_cached_push_subscription', JSON.stringify({
       id: endpointHash,
       ...subData,
+      deviceType,
       updatedAt: new Date().toISOString()
     }));
 
-    // Show initial confirmation via SW
+    // Send immediate confirmation / welcome alert
     try {
       await registration.showNotification('CuMeals Alerts Activated! 🔔', {
-        body: 'You will now receive meal timings, daily menu changes, and announcements even when CuMeals is closed.',
+        body: 'Meal timings, upcoming dishes, and hostel mess alerts are now active for your device.',
         icon: '/icon-192.png',
         badge: '/favicon.png',
         data: { url: '/' }
       });
     } catch (swErr) {
-      console.warn('SW initial notification note:', swErr);
+      console.warn('SW notification note:', swErr);
     }
 
     return {
@@ -224,51 +253,11 @@ export async function unsubscribeFromPushNotifications(): Promise<boolean> {
 
     localStorage.removeItem('cumeals_push_subscribed');
     localStorage.removeItem('cumeals_push_endpoint_hash');
+    localStorage.removeItem('cumeals_cached_push_subscription');
     return true;
   } catch (err) {
     console.error('Error unsubscribing:', err);
     return false;
-  }
-}
-
-// Send test notification (via server API and fallback via local SW)
-export async function sendTestPushAlert(title = 'CuMeals Test Alert', body = 'Test notification delivered successfully!'): Promise<{ success: boolean; message: string }> {
-  try {
-    if ('serviceWorker' in navigator) {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-
-      if (sub) {
-        // Trigger server-side push through web-push
-        const res = await fetch('/api/test-push', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            subscription: sub.toJSON(),
-            title,
-            body,
-            url: '/'
-          })
-        });
-
-        if (res.ok) {
-          return { success: true, message: 'Push notification sent through Web Push server!' };
-        }
-      }
-
-      // Fallback direct SW display
-      await reg.showNotification(title, {
-        body,
-        icon: '/icon-192.png',
-        badge: '/favicon.png',
-        data: { url: '/' }
-      });
-
-      return { success: true, message: 'Notification displayed directly on device!' };
-    }
-    return { success: false, message: 'Service worker is not active.' };
-  } catch (err: any) {
-    return { success: false, message: err?.message || 'Failed to send test push alert.' };
   }
 }
 
@@ -282,7 +271,7 @@ export async function getAllPushSubscribers(): Promise<any[]> {
     snap.forEach(d => {
       const data = d.data();
       if (data && data.endpoint) {
-        map.set(data.endpoint, { id: d.id, ...data });
+        map.set(data.endpoint, normalizeSubscriber({ id: d.id, ...data }));
       }
     });
   } catch (e) {
@@ -296,8 +285,17 @@ export async function getAllPushSubscribers(): Promise<any[]> {
       const data = await res.json();
       if (data.subscribers && Array.isArray(data.subscribers)) {
         for (const sub of data.subscribers) {
-          if (sub && sub.endpoint && !map.has(sub.endpoint)) {
-            map.set(sub.endpoint, sub);
+          if (sub && sub.endpoint) {
+            const normalized = normalizeSubscriber(sub);
+            if (!map.has(sub.endpoint)) {
+              map.set(sub.endpoint, normalized);
+            } else {
+              // Merge if deviceType was more accurate from server
+              const existing = map.get(sub.endpoint);
+              if (existing.deviceType === 'desktop' && normalized.deviceType !== 'desktop') {
+                map.set(sub.endpoint, { ...existing, deviceType: normalized.deviceType });
+              }
+            }
           }
         }
       }
@@ -312,7 +310,7 @@ export async function getAllPushSubscribers(): Promise<any[]> {
     if (localCached) {
       const parsed = JSON.parse(localCached);
       if (parsed?.endpoint && !map.has(parsed.endpoint)) {
-        map.set(parsed.endpoint, parsed);
+        map.set(parsed.endpoint, normalizeSubscriber(parsed));
       }
     }
 
@@ -322,8 +320,10 @@ export async function getAllPushSubscribers(): Promise<any[]> {
       const currentSub = await reg.pushManager.getSubscription();
       if (currentSub && !map.has(currentSub.endpoint)) {
         const subJSON = currentSub.toJSON();
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        const deviceType = isIOS ? 'ios' : (/Android/i.test(navigator.userAgent) ? 'android' : 'desktop');
+        const isIOS = detectIsIOS() || currentSub.endpoint.includes('apple.com');
+        const isAndroid = !isIOS && (/Android/i.test(navigator.userAgent) || currentSub.endpoint.includes('fcm.googleapis.com'));
+        const deviceType = isIOS ? 'ios' : (isAndroid ? 'android' : 'desktop');
+        
         const fallbackSub = {
           id: 'device_current',
           endpoint: currentSub.endpoint,
@@ -331,7 +331,7 @@ export async function getAllPushSubscribers(): Promise<any[]> {
           deviceType,
           isStandalone: window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true,
           userName: 'Current Device',
-          userEmail: 'Local Active Subscriber',
+          userEmail: 'Active Subscriber',
           updatedAt: new Date().toISOString()
         };
         map.set(currentSub.endpoint, fallbackSub);
@@ -341,5 +341,5 @@ export async function getAllPushSubscribers(): Promise<any[]> {
     // Ignore
   }
 
-  return Array.from(map.values());
+  return Array.from(map.values()).map(normalizeSubscriber);
 }

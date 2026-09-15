@@ -13,9 +13,33 @@ try {
 
 const globalSubscribers = new Map<string, any>();
 
-// Handler for Vercel Serverless Functions (/api/...)
+function normalizeDeviceType(sub: any): 'ios' | 'android' | 'desktop' {
+  const endpoint = String(sub?.endpoint || '').toLowerCase();
+  const rawType = String(sub?.deviceType || '').toLowerCase();
+
+  if (rawType === 'ios' || endpoint.includes('apple.com') || endpoint.includes('push.apple.com')) {
+    return 'ios';
+  }
+  if (rawType === 'android' || endpoint.includes('fcm.googleapis.com') || endpoint.includes('google.com')) {
+    return 'android';
+  }
+  return 'desktop';
+}
+
+let automationSettings = {
+  enabled: true,
+  notify1HourBefore: true,
+  notifyOnStart: true,
+  notify30MinBeforeEnd: true,
+  meals: {
+    breakfast: true,
+    lunch: true,
+    snacks: true,
+    dinner: true
+  }
+};
+
 export default async function handler(req: Request, res: Response) {
-  // Extract path
   const url = req.url || '';
 
   if (req.method === 'GET' && (url.endsWith('/health') || url.includes('health'))) {
@@ -29,18 +53,50 @@ export default async function handler(req: Request, res: Response) {
   if (req.method === 'POST' && (url.endsWith('/register-subscription') || url.includes('register-subscription'))) {
     const sub = req.body;
     if (sub && sub.endpoint) {
-      globalSubscribers.set(sub.endpoint, sub);
-      return res.status(200).json({ success: true, count: globalSubscribers.size });
+      const deviceType = normalizeDeviceType(sub);
+      globalSubscribers.set(sub.endpoint, {
+        ...sub,
+        deviceType,
+        updatedAt: new Date().toISOString()
+      });
+      return res.status(200).json({ success: true, count: globalSubscribers.size, deviceType });
     }
     return res.status(400).json({ error: 'Invalid subscription data' });
   }
 
   if (req.method === 'GET' && (url.endsWith('/subscribers') || url.includes('subscribers'))) {
+    const subs = Array.from(globalSubscribers.values()).map(s => ({
+      ...s,
+      deviceType: normalizeDeviceType(s)
+    }));
+    const ios = subs.filter(s => s.deviceType === 'ios').length;
+    const android = subs.filter(s => s.deviceType === 'android').length;
     return res.status(200).json({
       success: true,
-      count: globalSubscribers.size,
-      subscribers: Array.from(globalSubscribers.values())
+      count: subs.length,
+      deviceStats: { ios, android, desktop: subs.length - ios - android, total: subs.length },
+      subscribers: subs
     });
+  }
+
+  if (req.method === 'GET' && url.includes('automation-status')) {
+    const subs = Array.from(globalSubscribers.values()).map(s => ({
+      ...s,
+      deviceType: normalizeDeviceType(s)
+    }));
+    const ios = subs.filter(s => s.deviceType === 'ios').length;
+    const android = subs.filter(s => s.deviceType === 'android').length;
+    return res.status(200).json({
+      success: true,
+      settings: automationSettings,
+      subscribersCount: subs.length,
+      deviceBreakdown: { ios, android, desktop: subs.length - ios - android, total: subs.length }
+    });
+  }
+
+  if (req.method === 'POST' && url.includes('automation-settings')) {
+    automationSettings = { ...automationSettings, ...(req.body || {}) };
+    return res.status(200).json({ success: true, settings: automationSettings });
   }
 
   if (req.method === 'POST' && (url.endsWith('/test-push') || url.includes('test-push'))) {
@@ -59,8 +115,14 @@ export default async function handler(req: Request, res: Response) {
       tag: tag || 'cumeals-test'
     });
 
+    const pushOptions = {
+      TTL: 86400,
+      urgency: 'high' as const,
+      topic: tag || 'cumeals-test'
+    };
+
     try {
-      const result = await webpush.sendNotification(subscription, payload);
+      const result = await webpush.sendNotification(subscription, payload, pushOptions);
       return res.status(200).json({ success: true, statusCode: result.statusCode });
     } catch (error: any) {
       return res.status(error?.statusCode || 500).json({
@@ -87,6 +149,12 @@ export default async function handler(req: Request, res: Response) {
       tag: tag || `cumeals-notice-${Date.now()}`
     });
 
+    const pushOptions = {
+      TTL: 86400,
+      urgency: 'high' as const,
+      topic: tag || 'cumeals-broadcast'
+    };
+
     let sentCount = 0;
     let failCount = 0;
     const expiredEndpoints: string[] = [];
@@ -98,7 +166,7 @@ export default async function handler(req: Request, res: Response) {
             endpoint: sub.endpoint,
             keys: sub.keys
           };
-          await webpush.sendNotification(targetSub, payload);
+          await webpush.sendNotification(targetSub, payload, pushOptions);
           sentCount++;
         } catch (err: any) {
           failCount++;

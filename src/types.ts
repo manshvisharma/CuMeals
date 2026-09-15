@@ -87,3 +87,16 @@ export interface FeedbackItem {
   status?: 'new' | 'reviewed' | 'resolved';
 }
 
+export interface MealAlertSettings {
+  enabled: boolean;
+  notify1HourBefore: boolean;    // "Dinner in 1 hour"
+  notifyOnStart: boolean;        // "Dinner Started! 🌙"
+  notify30MinBeforeEnd: boolean; // "Dinner ending in 30m ⏰ - Go & take your meal"
+  meals: {
+    breakfast: boolean;
+    lunch: boolean;
+    snacks: boolean;
+    dinner: boolean;
+  };
+}
+
