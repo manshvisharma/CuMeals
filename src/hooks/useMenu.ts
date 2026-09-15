@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DailyMenu, MealTimings, NoticeItem, MessSettings } from '../types';
-import { fetchMenuForDate, fetchTimings, fetchNotices, fetchSettings, getLocalStorageMenu } from '../firebase/firestore';
+import { fetchMenuForDate, fetchTimings, fetchNotices, fetchSettings, getLocalStorageMenu, getLocalStorageConfig } from '../firebase/firestore';
 import { getTodayString } from '../utils/dateUtils';
 
 export function useMenu(selectedDateStr: string) {
@@ -46,13 +46,15 @@ export function useMenu(selectedDateStr: string) {
 }
 
 export function useMessConfig() {
-  const [timings, setTimings] = useState<MealTimings | null>(null);
-  const [notices, setNotices] = useState<NoticeItem[]>([]);
-  const [settings, setSettings] = useState<MessSettings | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [timings, setTimings] = useState<MealTimings | null>(() => getLocalStorageConfig('timings'));
+  const [notices, setNotices] = useState<NoticeItem[]>(() => getLocalStorageConfig('notices') || []);
+  const [settings, setSettings] = useState<MessSettings | null>(() => getLocalStorageConfig('settings'));
+  const [loading, setLoading] = useState<boolean>(!timings || !settings);
 
   const loadConfig = useCallback(async () => {
-    setLoading(true);
+    if (!timings || !settings) {
+      setLoading(true);
+    }
     try {
       const [tData, nData, sData] = await Promise.all([
         fetchTimings(),
@@ -67,7 +69,7 @@ export function useMessConfig() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [timings, settings]);
 
   useEffect(() => {
     loadConfig();

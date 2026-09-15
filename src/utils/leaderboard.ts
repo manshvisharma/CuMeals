@@ -67,48 +67,33 @@ export async function prefetchLeaderboard(): Promise<LeaderboardEntry[]> {
  * Uploads legacy/local scores to Firestore once, so users don't lose past progress.
  */
 async function syncLocalScoresToFirestore() {
-  const syncFlagKey = 'cumeals_scores_synced_v1';
-  if (localStorage.getItem(syncFlagKey)) return;
-
   try {
-    let localEntries: LeaderboardEntry[] = [];
-    const keys = ['mess_game_leaderboards_real_v3', 'mess_game_leaderboards_real_v4', 'mess_game_leaderboards_real_v5'];
-    keys.forEach(key => {
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          localEntries = [...localEntries, ...parsed];
-        }
-      }
-    });
+    const rawQueue = localStorage.getItem('cumeals_offline_scores_queue');
+    if (!rawQueue) return;
+    
+    const queue: LeaderboardEntry[] = JSON.parse(rawQueue);
+    if (!Array.isArray(queue) || queue.length === 0) return;
 
-    // Remove duplicates and mock data
-    const validLocal = localEntries.filter(e => e && e.playerName && !e.id?.startsWith('mock'));
-    if (validLocal.length === 0) {
-      localStorage.setItem(syncFlagKey, 'true');
-      return; 
-    }
+    let successfulIds = new Set<string>();
 
-    // Try to upload. If permission fails, it throws and won't set the flag.
-    let uploadSuccess = true;
-    for (const entry of validLocal) {
+    for (const entry of queue) {
       try {
         const { id, ...dataToUpload } = entry;
         await addDoc(collection(db, 'leaderboards'), dataToUpload);
+        if (id) successfulIds.add(id);
       } catch (err) {
-        console.warn('Sync failed (likely permissions), will retry later.');
-        uploadSuccess = false;
-        break; 
+        console.warn('Offline sync failed, will retry later:', err);
+        break; // Stop if offline/permission fails
       }
     }
 
-    if (uploadSuccess) {
-      localStorage.setItem(syncFlagKey, 'true');
-      console.log(`Successfully synced local scores to Firestore.`);
+    if (successfulIds.size > 0) {
+      const remaining = queue.filter(e => !successfulIds.has(e.id || ''));
+      localStorage.setItem('cumeals_offline_scores_queue', JSON.stringify(remaining));
+      console.log(`Successfully synced ${successfulIds.size} offline scores to Firestore.`);
     }
   } catch (err) {
-    console.warn('Failed to sync local scores:', err);
+    console.warn('Failed to sync offline scores:', err);
   }
 }
 
@@ -338,7 +323,15 @@ export async function saveGameScore(entry: Omit<LeaderboardEntry, 'id'>): Promis
     });
     console.log('Global score saved successfully to Firestore!');
   } catch (e) {
-    console.warn('Firestore addDoc warning:', e);
+    console.warn('Firestore addDoc failed, queueing offline:', e);
+    try {
+      const rawQueue = localStorage.getItem('cumeals_offline_scores_queue');
+      const queue = rawQueue ? JSON.parse(rawQueue) : [];
+      queue.push(newEntry);
+      localStorage.setItem('cumeals_offline_scores_queue', JSON.stringify(queue));
+    } catch (err) {
+      console.warn('Failed to queue offline score', err);
+    }
   }
 
   return true;

@@ -77,6 +77,24 @@ export function setLocalStorageMenu(menu: DailyMenu) {
   }
 }
 
+export function getLocalStorageConfig<T>(key: string): T | null {
+  try {
+    const saved = localStorage.getItem(`mess_config_${key}`);
+    if (saved) return JSON.parse(saved) as T;
+  } catch (e) {
+    console.error('Local storage config read error', e);
+  }
+  return null;
+}
+
+export function setLocalStorageConfig<T>(key: string, data: T) {
+  try {
+    localStorage.setItem(`mess_config_${key}`, JSON.stringify(data));
+  } catch (e) {
+    console.error('Local storage config write error', e);
+  }
+}
+
 // 1. Fetch Menu for a specific date (e.g. "2026-08-20")
 export async function fetchMenuForDate(dateOrDayStr: string): Promise<DailyMenu | null> {
   const key = dateOrDayStr.trim().toLowerCase();
@@ -177,11 +195,17 @@ export async function fetchTimings(): Promise<MealTimings> {
     const docRef = doc(db, 'timings', 'default');
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      return docSnap.data() as MealTimings;
+      const data = docSnap.data() as MealTimings;
+      setLocalStorageConfig('timings', data);
+      return data;
     }
   } catch (err) {
     handleFirestoreError(err, OperationType.GET, path);
   }
+  
+  const local = getLocalStorageConfig<MealTimings>('timings');
+  if (local) return local;
+  
   return defaultTimings;
 }
 
@@ -191,6 +215,7 @@ export async function saveTimings(timings: MealTimings): Promise<boolean> {
   try {
     const docRef = doc(db, 'timings', 'default');
     await setDoc(docRef, timings, { merge: true });
+    setLocalStorageConfig('timings', timings);
     return true;
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
@@ -207,11 +232,17 @@ export async function fetchNotices(): Promise<NoticeItem[]> {
     if (!snap.empty) {
       const notices: NoticeItem[] = [];
       snap.forEach(d => notices.push({ id: d.id, ...d.data() } as NoticeItem));
-      return notices.filter(n => n.active !== false);
+      const active = notices.filter(n => n.active !== false);
+      setLocalStorageConfig('notices', active);
+      return active;
     }
   } catch (err) {
     handleFirestoreError(err, OperationType.LIST, path);
   }
+  
+  const local = getLocalStorageConfig<NoticeItem[]>('notices');
+  if (local) return local;
+  
   return defaultNotices;
 }
 
@@ -247,11 +278,17 @@ export async function fetchSettings(): Promise<MessSettings> {
     const docRef = doc(db, 'settings', 'general');
     const snap = await getDoc(docRef);
     if (snap.exists()) {
-      return snap.data() as MessSettings;
+      const data = snap.data() as MessSettings;
+      setLocalStorageConfig('settings', data);
+      return data;
     }
   } catch (err) {
     handleFirestoreError(err, OperationType.GET, path);
   }
+  
+  const local = getLocalStorageConfig<MessSettings>('settings');
+  if (local) return local;
+  
   return defaultSettings;
 }
 
@@ -261,6 +298,7 @@ export async function saveSettings(settings: MessSettings): Promise<boolean> {
   try {
     const docRef = doc(db, 'settings', 'general');
     await setDoc(docRef, settings, { merge: true });
+    setLocalStorageConfig('settings', settings);
     return true;
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
