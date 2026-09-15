@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 export type ThemePreference = 'device' | 'light' | 'dark';
+export type Theme = ThemePreference;
 
 interface ThemeContextType {
   themePreference: ThemePreference;
+  theme: ThemePreference;
   isDark: boolean;
   setThemePreference: (pref: ThemePreference) => void;
+  toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -50,8 +53,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setThemePreferenceState(pref);
   };
 
+  const toggleTheme = () => {
+    setThemePreference(isDark ? 'light' : 'dark');
+  };
+
   return (
-    <ThemeContext.Provider value={{ themePreference, isDark, setThemePreference }}>
+    <ThemeContext.Provider value={{
+      themePreference,
+      theme: themePreference,
+      isDark,
+      setThemePreference,
+      toggleTheme
+    }}>
       {children}
     </ThemeContext.Provider>
   );

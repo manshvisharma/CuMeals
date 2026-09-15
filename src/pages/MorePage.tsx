@@ -18,6 +18,7 @@ import { InstallPrompt } from '../components/InstallPrompt';
 import { NoticeModal } from '../components/NoticeModal';
 import { UserProfileModal } from '../components/UserProfileModal';
 import { ThemeSettingCard } from "../components/ThemeSettingCard";
+import { NotificationSettingsCard } from '../components/NotificationSettingsCard';
 import { CuMealsLogo } from '../components/CuMealsLogo';
 import { useMessConfig } from '../hooks/useMenu';
 import { subscribeToAuth } from '../firebase/auth';
@@ -131,6 +132,11 @@ export const MorePage: React.FC<MorePageProps> = ({ onOpenAdmin }) => {
 
       {/* PWA Install Prompt */}
       <InstallPrompt />
+
+      {/* Push Notifications Card */}
+      <div className="mb-4">
+        <NotificationSettingsCard currentUser={currentUser} />
+      </div>
 
       {/* Glass List Options */}
       <div className="space-y-2.5">

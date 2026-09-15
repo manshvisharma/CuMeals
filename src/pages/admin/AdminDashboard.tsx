@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Utensils, FileJson, Clock, Bell, LogOut, ArrowLeft, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Utensils, FileJson, Clock, Bell, LogOut, ArrowLeft, MessageSquare, BellRing } from 'lucide-react';
 import { MenuManager } from './MenuManager';
 import { JsonImportExport } from './JsonImportExport';
 import { TimingsManager } from './TimingsManager';
 import { NoticesManager } from './NoticesManager';
 import { FeedbackManager } from './FeedbackManager';
+import { PushNotificationManager } from './PushNotificationManager';
 import { logoutUser } from '../../firebase/auth';
 
 interface AdminDashboardProps {
@@ -12,7 +13,7 @@ interface AdminDashboardProps {
   onBackToApp: () => void;
 }
 
-type AdminTab = 'menu' | 'feedbacks' | 'json' | 'timings' | 'notices';
+type AdminTab = 'menu' | 'feedbacks' | 'json' | 'timings' | 'notices' | 'push';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onBackToApp }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('menu');
@@ -28,7 +29,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onBack
     { id: 'feedbacks', label: 'Feedback', icon: MessageSquare },
     { id: 'json', label: 'Import/Export', icon: FileJson },
     { id: 'timings', label: 'Timings', icon: Clock },
-    { id: 'notices', label: 'Notices', icon: Bell }
+    { id: 'notices', label: 'Notices', icon: Bell },
+    { id: 'push', label: 'Push Broadcast', icon: BellRing }
   ];
 
   return (
@@ -99,6 +101,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onBack
       {activeTab === 'json' && <JsonImportExport />}
       {activeTab === 'timings' && <TimingsManager />}
       {activeTab === 'notices' && <NoticesManager />}
+      {activeTab === 'push' && <PushNotificationManager />}
 
     </div>
   );

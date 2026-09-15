@@ -5,9 +5,11 @@ import { CalendarModal } from '../components/CalendarModal';
 import { MealCard } from '../components/MealCard';
 import { MealDetailModal } from '../components/MealDetailModal';
 import { NoticeModal } from '../components/NoticeModal';
+import { NotificationPromptBanner } from '../components/NotificationPromptBanner';
 import { CuMealsLogo } from '../components/CuMealsLogo';
 import { useMenu, useMessConfig } from '../hooks/useMenu';
 import { MealType } from '../types';
+import { auth } from '../firebase/config';
 import { getTodayString, getFormattedDateLong, getRelativeDayLabel } from '../utils/dateUtils';
 
 interface MenuPageProps {
@@ -64,6 +66,9 @@ export const MenuPage: React.FC<MenuPageProps> = ({ selectedDate, onSelectDate }
           )}
         </button>
       </div>
+
+      {/* Push Notification Enable Banner */}
+      <NotificationPromptBanner currentUser={auth.currentUser} />
 
       {/* Date Selector with Surrounding Dates + Calendar Trigger */}
       <DateSelector
