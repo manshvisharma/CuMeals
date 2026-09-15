@@ -138,19 +138,27 @@ export async function subscribeToPushNotifications(currentUser?: User | null): P
     };
 
     const subDocRef = doc(db, 'push_subscriptions', endpointHash);
-    await setDoc(subDocRef, subData, { merge: true });
+    try {
+      await setDoc(subDocRef, subData, { merge: true });
+    } catch (dbErr: any) {
+      console.warn('Firestore subscription sync warning:', dbErr?.message);
+    }
 
     // Local marker
     localStorage.setItem('cumeals_push_subscribed', 'true');
     localStorage.setItem('cumeals_push_endpoint_hash', endpointHash);
 
     // Show initial confirmation via SW
-    registration.showNotification('CuMeals Alerts Activated! 🔔', {
-      body: 'You will now receive meal timings, daily menu changes, and announcements even when CuMeals is closed.',
-      icon: '/icon-192.png',
-      badge: '/favicon.png',
-      data: { url: '/' }
-    });
+    try {
+      await registration.showNotification('CuMeals Alerts Activated! 🔔', {
+        body: 'You will now receive meal timings, daily menu changes, and announcements even when CuMeals is closed.',
+        icon: '/icon-192.png',
+        badge: '/favicon.png',
+        data: { url: '/' }
+      });
+    } catch (swErr) {
+      console.warn('SW initial notification note:', swErr);
+    }
 
     return {
       success: true,

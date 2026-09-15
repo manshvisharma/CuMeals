@@ -101,6 +101,10 @@
     "/feedbacks/{feedbackId}": {
       "schema": "object",
       "description": "User feedback submissions"
+    },
+    "/push_subscriptions/{subId}": {
+      "schema": "object",
+      "description": "Registered Web Push device subscriptions"
     }
   }
 }
