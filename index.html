@@ -29,8 +29,60 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+      <style>
+      #splash-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #07090E;
+        transition: opacity 0.4s ease-out;
+      }
+      .splash-logo {
+        width: 72px;
+        height: 72px;
+        border-radius: 20px;
+        background: linear-gradient(to top right, #4f46e5, #6366f1, #9333ea);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+        border: 1px solid rgba(129, 140, 248, 0.3);
+        animation: splash-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      .splash-title {
+        margin-top: 20px;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #f1f5f9;
+        letter-spacing: -0.025em;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+      }
+      @keyframes splash-pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(0.95); }
+      }
+      @media (prefers-color-scheme: light) {
+        #splash-screen { background-color: #f8fafc; }
+        .splash-title { color: #0f172a; }
+      }
+    </style>
   </head>
-  <body class="bg-[#07090E] text-slate-100 min-h-screen font-['Plus_Jakarta_Sans',-apple-system,BlinkMacSystemFont,sans-serif] antialiased selection:bg-indigo-500 selection:text-white">
+  <body class="bg-slate-50 dark:bg-[#07090E] text-slate-900 dark:text-slate-100 min-h-screen font-['Plus_Jakarta_Sans',-apple-system,BlinkMacSystemFont,sans-serif] antialiased selection:bg-indigo-500 selection:text-white">
+        <div id="splash-screen">
+      <div class="splash-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+          <path d="M7 2v20"/>
+          <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+        </svg>
+      </div>
+      <div class="splash-title">CuMeals</div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

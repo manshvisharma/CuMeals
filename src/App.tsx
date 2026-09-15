@@ -34,6 +34,15 @@ export default function App() {
   useEffect(() => {
     // Background prefetch global leaderboard scores for instant load
     prefetchLeaderboard();
+    // Remove splash screen after initial load (with slight delay for smooth UX)
+    const splash = document.getElementById('splash-screen');
+    if (splash) {
+      setTimeout(() => {
+        splash.style.opacity = '0';
+        setTimeout(() => splash.remove(), 400);
+      }, 800); // Wait 800ms to show the logo
+    }
+
 
     // Subscribe to Firebase Auth
     const unsubscribe = subscribeToAuth((currentUser) => {
