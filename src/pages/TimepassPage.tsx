@@ -177,59 +177,78 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
 
       {/* Mini Games Content */}
       {mainTab === 'minigames' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Math Rush Card */}
-          <div 
-            onClick={() => setActiveGame('mathRush')}
-            className="group relative overflow-hidden bg-white dark:bg-[#131722] rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all cursor-pointer hover:-translate-y-1 active:translate-y-0"
-          >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 dark:from-indigo-500/20 dark:to-purple-500/20 rounded-full blur-2xl -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-500" />
-            <div className="flex items-center gap-4 mb-3 relative">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 text-white group-hover:scale-110 transition-transform">
-                <Brain size={24} />
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Math Rush Card */}
+            <div 
+              onClick={() => setActiveGame('mathRush')}
+              className="group relative overflow-hidden bg-white dark:bg-[#131722] rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all cursor-pointer hover:-translate-y-1 active:translate-y-0"
+            >
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 dark:from-indigo-500/20 dark:to-purple-500/20 rounded-full blur-2xl -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-500" />
+              <div className="flex items-center gap-4 mb-3 relative">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 text-white group-hover:scale-110 transition-transform">
+                  <Brain size={24} />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 dark:text-white text-lg leading-tight">Math Rush</h3>
+                  <span className="text-[10px] font-bold tracking-wider uppercase text-indigo-500">Brain Training</span>
+                </div>
               </div>
-              <div>
-                <h3 className="font-black text-slate-900 dark:text-white text-lg leading-tight">Math Rush</h3>
-                <span className="text-[10px] font-bold tracking-wider uppercase text-indigo-500">Brain Training</span>
-              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium relative">Solve basic math equations before the time runs out. Get faster!</p>
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium relative">Solve basic math equations before the time runs out. Get faster!</p>
-          </div>
-          
-          {/* Memory Match Card */}
-          <div 
-            onClick={() => setActiveGame('memory_v3')}
-            className="group relative overflow-hidden bg-white dark:bg-[#131722] rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-800 transition-all cursor-pointer hover:-translate-y-1 active:translate-y-0"
-          >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/20 rounded-full blur-2xl -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-500" />
-            <div className="flex items-center gap-4 mb-3 relative">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 text-white group-hover:scale-110 transition-transform">
-                <Gamepad2 size={24} />
+            
+            {/* Memory Match Card */}
+            <div 
+              onClick={() => setActiveGame('memory_v3')}
+              className="group relative overflow-hidden bg-white dark:bg-[#131722] rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-800 transition-all cursor-pointer hover:-translate-y-1 active:translate-y-0"
+            >
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/20 rounded-full blur-2xl -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-500" />
+              <div className="flex items-center gap-4 mb-3 relative">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 text-white group-hover:scale-110 transition-transform">
+                  <Gamepad2 size={24} />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 dark:text-white text-lg leading-tight">Memory Match</h3>
+                  <span className="text-[10px] font-bold tracking-wider uppercase text-emerald-500">Focus Game</span>
+                </div>
               </div>
-              <div>
-                <h3 className="font-black text-slate-900 dark:text-white text-lg leading-tight">Memory Match</h3>
-                <span className="text-[10px] font-bold tracking-wider uppercase text-emerald-500">Focus Game</span>
-              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium relative">Flip cards and find matching pairs. Complete in fewest moves!</p>
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium relative">Flip cards and find matching pairs. Complete in fewest moves!</p>
+
+            {/* Color Confusion Card */}
+            <div 
+              onClick={() => setActiveGame('colorConfusion_v2')}
+              className="group relative overflow-hidden bg-white dark:bg-[#131722] rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800 hover:border-rose-200 dark:hover:border-rose-800 transition-all cursor-pointer hover:-translate-y-1 active:translate-y-0"
+            >
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-rose-500/10 to-orange-500/10 dark:from-rose-500/20 dark:to-orange-500/20 rounded-full blur-2xl -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-500" />
+              <div className="flex items-center gap-4 mb-3 relative">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-400 to-orange-500 flex items-center justify-center shadow-lg shadow-rose-500/30 text-white group-hover:scale-110 transition-transform">
+                  <Zap size={24} />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 dark:text-white text-lg leading-tight">Color Clash</h3>
+                  <span className="text-[10px] font-bold tracking-wider uppercase text-rose-500">Reflexes</span>
+                </div>
+              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium relative">Does the text match the color? Think fast before time is up!</p>
+            </div>
           </div>
 
-          {/* Color Confusion Card */}
-          <div 
-            onClick={() => setActiveGame('colorConfusion_v2')}
-            className="group relative overflow-hidden bg-white dark:bg-[#131722] rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800 hover:border-rose-200 dark:hover:border-rose-800 transition-all cursor-pointer hover:-translate-y-1 active:translate-y-0"
-          >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-rose-500/10 to-orange-500/10 dark:from-rose-500/20 dark:to-orange-500/20 rounded-full blur-2xl -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-500" />
-            <div className="flex items-center gap-4 mb-3 relative">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-400 to-orange-500 flex items-center justify-center shadow-lg shadow-rose-500/30 text-white group-hover:scale-110 transition-transform">
-                <Zap size={24} />
+          {/* Game Suggestions Section */}
+          <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-950/40 dark:to-purple-950/40 rounded-3xl p-4 border border-indigo-100 dark:border-indigo-900/50 mt-6">
+            <h4 className="text-xs font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-2 flex items-center gap-1.5">
+              💡 Recommended Games & Future Roadmap
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300">
+              <div className="bg-white/60 dark:bg-slate-800/60 p-2.5 rounded-2xl">
+                <strong className="text-slate-900 dark:text-white block mb-0.5">⚡ Flash Reflex (Solo)</strong>
+                Tap the screen the exact millisecond the color turns neon green.
               </div>
-              <div>
-                <h3 className="font-black text-slate-900 dark:text-white text-lg leading-tight">Color Clash</h3>
-                <span className="text-[10px] font-bold tracking-wider uppercase text-rose-500">Reflexes</span>
+              <div className="bg-white/60 dark:bg-slate-800/60 p-2.5 rounded-2xl">
+                <strong className="text-slate-900 dark:text-white block mb-0.5">⚔️ Math Duel (Battle)</strong>
+                Head-to-head arithmetic sprint against your hostel mates in real time.
               </div>
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium relative">Does the text match the color? Think fast before time is up!</p>
           </div>
         </div>
       )}
@@ -260,15 +279,32 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
               <div className="flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-bold">
                 <button onClick={() => setTimeframe('lifetime')} className={`flex-1 py-1.5 rounded-xl transition-all text-center flex items-center justify-center gap-1 ${timeframe === 'lifetime' ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs' : 'text-slate-400 hover:text-slate-700'}`}><Flame size={12} /><span>Lifetime</span></button>
                 <button onClick={() => setTimeframe('weekly')} className={`flex-1 py-1.5 rounded-xl transition-all text-center flex items-center justify-center gap-1 ${timeframe === 'weekly' ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs' : 'text-slate-400 hover:text-slate-700'}`}><Calendar size={12} /><span>Weekly</span></button>
               </div>
-              <div className="flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 text-[10px] font-bold">
-                <button onClick={() => setLeaderboardTab('mathRush')} className={`flex-1 py-1.5 rounded-xl transition-all text-center ${leaderboardTab === 'mathRush' ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs' : 'text-slate-400 hover:text-slate-700'}`}>Math</button>
-                <button onClick={() => setLeaderboardTab('colorConfusion_v2')} className={`flex-1 py-1.5 rounded-xl transition-all text-center ${leaderboardTab === 'colorConfusion_v2' ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs' : 'text-slate-400 hover:text-slate-700'}`}>Colors</button>
-                <button onClick={() => setLeaderboardTab('memory_v3')} className={`flex-1 py-1.5 rounded-xl transition-all text-center ${leaderboardTab === 'memory_v3' ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs' : 'text-slate-400 hover:text-slate-700'}`}>Memory</button>
+
+              {/* Clean Organized Game Selector for Leaderboard */}
+              <div className="grid grid-cols-3 gap-1.5 pt-1">
+                <button 
+                  onClick={() => setLeaderboardTab('mathRush')} 
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 ${leaderboardTab === 'mathRush' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800'}`}
+                >
+                  <Brain size={14} /> Math Rush
+                </button>
+                <button 
+                  onClick={() => setLeaderboardTab('colorConfusion_v2')} 
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 ${leaderboardTab === 'colorConfusion_v2' ? 'bg-rose-500 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800'}`}
+                >
+                  <Zap size={14} /> Color Clash
+                </button>
+                <button 
+                  onClick={() => setLeaderboardTab('memory_v3')} 
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 ${leaderboardTab === 'memory_v3' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800'}`}
+                >
+                  <Gamepad2 size={14} /> Memory
+                </button>
               </div>
             </div>
             {timeframe === 'weekly' && (

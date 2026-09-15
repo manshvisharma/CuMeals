@@ -13,6 +13,7 @@ export const Lobby: React.FC<LobbyProps> = ({ currentUser, playerName, onJoinGam
   const [players, setPlayers] = useState<PlayerPresence[]>([]);
   const [challenges, setChallenges] = useState<GameChallenge[]>([]);
   const [selectedGame, setSelectedGame] = useState<string>('snake');
+  const joinedChallenges = React.useRef(new Set<string>());
   
   const uid = currentUser?.uid;
 
@@ -46,7 +47,8 @@ export const Lobby: React.FC<LobbyProps> = ({ currentUser, playerName, onJoinGam
       
       // Auto-join accepted challenges
       recent.forEach(ch => {
-        if (ch.status === 'accepted' && ch.sessionId) {
+        if (ch.status === 'accepted' && ch.sessionId && !joinedChallenges.current.has(ch.id)) {
+          joinedChallenges.current.add(ch.id);
           // If I was the challenger, I'm player 1
           if (ch.challengerId === uid) {
             onJoinGame(ch.gameType, ch.sessionId, ch.challengedName, true);

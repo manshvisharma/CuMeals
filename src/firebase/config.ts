@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 
 export const firebaseConfig = {
   apiKey: "AIzaSyCaIXR2toO32XMveAbhYB2bX3Sf34dwCmI",
@@ -15,6 +15,18 @@ export const firebaseConfig = {
 // Initialize Firebase safely
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// Enable robust offline persistence for fast loads
+let firestoreDb;
+try {
+  firestoreDb = initializeFirestore(app, {
+    localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})
+  });
+} catch (error) {
+  // Fallback if already initialized
+  firestoreDb = getFirestore(app);
+}
+
+export const db = firestoreDb;
 
 export default app;

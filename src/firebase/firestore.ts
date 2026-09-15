@@ -50,7 +50,7 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 // In-memory cache synced with local storage for instant fallback
 const localMockMenus = generateMockMenus();
 
-function getLocalStorageMenu(key: string): DailyMenu | null {
+export function getLocalStorageMenu(key: string): DailyMenu | null {
   try {
     const saved = localStorage.getItem(`mess_menu_${key.toLowerCase()}`);
     if (saved) {
@@ -66,7 +66,7 @@ function getLocalStorageMenu(key: string): DailyMenu | null {
   return localMockMenus[key.toLowerCase()] || null;
 }
 
-function setLocalStorageMenu(menu: DailyMenu) {
+export function setLocalStorageMenu(menu: DailyMenu) {
   try {
     const key = (menu.date || menu.day || '').toLowerCase();
     if (key) {

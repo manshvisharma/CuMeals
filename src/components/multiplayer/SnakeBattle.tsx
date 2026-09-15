@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Trophy, ArrowLeft, Skull } from 'lucide-react';
+import { Trophy, ArrowLeft, Skull, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GameSession, updateGameState, subscribeToGameSession, setPresence } from '../../utils/multiplayer';
 import { User } from 'firebase/auth';
 
@@ -116,6 +116,38 @@ export const SnakeBattle: React.FC<SnakeBattleProps> = ({ currentUser, sessionId
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isPlayer1, session]);
 
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartX.current || !touchStartY.current) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    
+    let key = '';
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (Math.abs(dx) > 20) {
+        key = dx > 0 ? 'ArrowRight' : 'ArrowLeft';
+      }
+    } else {
+      if (Math.abs(dy) > 20) {
+        key = dy > 0 ? 'ArrowDown' : 'ArrowUp';
+      }
+    }
+    
+    if (key) {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key }));
+    }
+    
+    touchStartX.current = 0;
+    touchStartY.current = 0;
+  };
+
   // Game Loop
   useEffect(() => {
     if (session?.status !== 'playing') return;
@@ -226,8 +258,8 @@ export const SnakeBattle: React.FC<SnakeBattleProps> = ({ currentUser, sessionId
   // Assign colors
   const mySnake = isPlayer1 ? p1Snake : p2Snake;
   const oppSnake = isPlayer1 ? p2Snake : p1Snake;
-  const myColor = isPlayer1 ? 'bg-indigo-500' : 'bg-rose-500';
-  const oppColor = isPlayer1 ? 'bg-rose-500' : 'bg-indigo-500';
+  const myColor = 'bg-emerald-500';
+  const oppColor = 'bg-rose-500';
 
   return (
     <div className="w-full bg-white dark:bg-[#131722] rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
@@ -266,27 +298,34 @@ export const SnakeBattle: React.FC<SnakeBattleProps> = ({ currentUser, sessionId
         <>
           <div className="flex justify-between items-center mb-6 px-4">
             <div className="text-center">
-              <div className="text-xs font-bold text-slate-400 mb-1">YOU</div>
-              <div className={`text-xl font-black text-white ${isPlayer1 ? 'bg-indigo-500' : 'bg-rose-500'} px-4 py-1.5 rounded-2xl`}>{myScore}</div>
+              <div className="text-xs font-bold text-emerald-500 mb-1 flex items-center gap-1 justify-center">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" /> YOU
+              </div>
+              <div className="text-xl font-black text-white bg-emerald-500 px-4 py-1.5 rounded-2xl shadow-sm">{myScore}</div>
             </div>
             
             <div className="text-center">
-              <div className="text-xs font-bold text-slate-400 mb-1 uppercase truncate max-w-[80px]">{opponentName}</div>
-              <div className={`text-xl font-black text-white ${isPlayer1 ? 'bg-rose-500' : 'bg-indigo-500'} px-4 py-1.5 rounded-2xl`}>{oppScore}</div>
+              <div className="text-xs font-bold text-rose-500 mb-1 flex items-center gap-1 justify-center uppercase truncate max-w-[80px]">
+                THEM <div className="w-2 h-2 rounded-full bg-rose-500" />
+              </div>
+              <div className="text-xl font-black text-white bg-rose-500 px-4 py-1.5 rounded-2xl shadow-sm">{oppScore}</div>
             </div>
           </div>
 
           <div 
-            className="w-full max-w-[300px] mx-auto aspect-square bg-slate-100 dark:bg-slate-800 rounded-lg relative overflow-hidden"
+            className="w-full max-w-[300px] mx-auto aspect-square bg-[#0f111a] rounded-xl relative overflow-hidden shadow-inner border-2 border-slate-800"
             style={{ 
               display: 'grid', 
               gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
-              gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)`
+              gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)`,
+              touchAction: 'none'
             }}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
           >
             {/* Grid Cells */}
             {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => (
-              <div key={i} className="border border-slate-200/50 dark:border-slate-700/30" />
+              <div key={i} className="border border-slate-800/50" />
             ))}
 
             {/* Food */}
@@ -302,11 +341,12 @@ export const SnakeBattle: React.FC<SnakeBattleProps> = ({ currentUser, sessionId
             {mySnake.map((segment, idx) => (
               <div 
                 key={`my-${idx}`}
-                className={`absolute ${myColor} ${idx === 0 ? 'rounded-md z-10' : 'rounded-sm opacity-80'}`}
+                className={`absolute ${myColor} ${idx === 0 ? 'rounded-md z-10' : 'rounded-sm opacity-90'}`}
                 style={{
                   width: `${100/GRID_SIZE}%`, height: `${100/GRID_SIZE}%`,
                   left: `${segment.x * (100/GRID_SIZE)}%`, top: `${segment.y * (100/GRID_SIZE)}%`,
-                  transform: 'scale(0.9)'
+                  transform: idx === 0 ? 'scale(1.1)' : 'scale(0.85)',
+                  boxShadow: idx === 0 ? '0 0 10px rgba(16, 185, 129, 0.6)' : 'none'
                 }}
               />
             ))}
@@ -315,48 +355,53 @@ export const SnakeBattle: React.FC<SnakeBattleProps> = ({ currentUser, sessionId
             {oppSnake.map((segment, idx) => (
               <div 
                 key={`opp-${idx}`}
-                className={`absolute ${oppColor} ${idx === 0 ? 'rounded-md z-10' : 'rounded-sm opacity-80'}`}
+                className={`absolute ${oppColor} ${idx === 0 ? 'rounded-md z-10' : 'rounded-sm opacity-90'}`}
                 style={{
                   width: `${100/GRID_SIZE}%`, height: `${100/GRID_SIZE}%`,
                   left: `${segment.x * (100/GRID_SIZE)}%`, top: `${segment.y * (100/GRID_SIZE)}%`,
-                  transform: 'scale(0.9)'
+                  transform: idx === 0 ? 'scale(1.1)' : 'scale(0.85)',
+                  boxShadow: idx === 0 ? '0 0 10px rgba(244, 63, 94, 0.6)' : 'none'
                 }}
               />
             ))}
           </div>
 
+          <div className="text-center mt-4 text-xs font-bold text-slate-400">
+            Swipe on the board to move
+          </div>
+
           {/* Mobile Controls (Since arrows won't work on mobile well) */}
-          <div className="grid grid-cols-3 gap-2 max-w-[200px] mx-auto mt-6">
+          <div className="grid grid-cols-3 gap-2 max-w-[200px] mx-auto mt-4">
             <div />
             <button 
               onClick={() => {
                 const e = new KeyboardEvent('keydown', { key: 'ArrowUp' });
                 window.dispatchEvent(e);
               }}
-              className="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl flex items-center justify-center active:scale-95"
-            >↑</button>
+              className="bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl flex items-center justify-center active:scale-95 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm"
+            ><ChevronUp size={24} strokeWidth={3} /></button>
             <div />
             <button 
               onClick={() => {
                 const e = new KeyboardEvent('keydown', { key: 'ArrowLeft' });
                 window.dispatchEvent(e);
               }}
-              className="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl flex items-center justify-center active:scale-95"
-            >←</button>
+              className="bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl flex items-center justify-center active:scale-95 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm"
+            ><ChevronLeft size={24} strokeWidth={3} /></button>
             <button 
               onClick={() => {
                 const e = new KeyboardEvent('keydown', { key: 'ArrowDown' });
                 window.dispatchEvent(e);
               }}
-              className="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl flex items-center justify-center active:scale-95"
-            >↓</button>
+              className="bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl flex items-center justify-center active:scale-95 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm"
+            ><ChevronDown size={24} strokeWidth={3} /></button>
             <button 
               onClick={() => {
                 const e = new KeyboardEvent('keydown', { key: 'ArrowRight' });
                 window.dispatchEvent(e);
               }}
-              className="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl flex items-center justify-center active:scale-95"
-            >→</button>
+              className="bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl flex items-center justify-center active:scale-95 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm"
+            ><ChevronRight size={24} strokeWidth={3} /></button>
           </div>
         </>
       )}
