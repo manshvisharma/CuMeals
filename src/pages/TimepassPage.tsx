@@ -38,6 +38,15 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
   const [tempNameInput, setTempNameInput] = useState<string>('');
 
   const playerName = currentUser?.displayName || currentUser?.email?.split('@')[0] || customName || 'Hostel Student';
+  useEffect(() => {
+    const handleJoin = (e: any) => {
+      setActiveBattle(e.detail);
+      setMainTab('battles');
+    };
+    window.addEventListener('join-multiplayer-game', handleJoin);
+    return () => window.removeEventListener('join-multiplayer-game', handleJoin);
+  }, []);
+
 
   const saveNickname = () => {
     const val = tempNameInput.trim();

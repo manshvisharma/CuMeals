@@ -8,6 +8,7 @@ import { AdminLogin } from './pages/admin/AdminLogin';
 import { BottomNav } from './components/BottomNav';
 import { SwipeableViews } from './components/SwipeableViews';
 import { MandatoryAuthScreen } from './components/MandatoryAuthScreen';
+import { GlobalMultiplayer } from './components/GlobalMultiplayer';
 import { ActiveTab } from './types';
 import { getTodayString } from './utils/dateUtils';
 import { subscribeToAuth } from './firebase/auth';
@@ -23,6 +24,12 @@ export default function App() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
     return localStorage.getItem('mess_admin_session') === 'true';
   });
+
+  useEffect(() => {
+    const handleNav = (e: any) => setActiveTab(e.detail);
+    window.addEventListener('navigate-tab', handleNav);
+    return () => window.removeEventListener('navigate-tab', handleNav);
+  }, []);
 
   // Auth state
   const [user, setUser] = useState<User | null>(null);
@@ -72,7 +79,8 @@ export default function App() {
           : 'max-w-md min-h-screen sm:min-h-[844px] sm:max-h-[92vh] sm:rounded-[40px] px-5 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-28 sm:pb-28'
       } bg-white dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 sm:border sm:border-slate-100 dark:sm:border-slate-800/80 sm:shadow-2xl relative flex flex-col justify-between overflow-y-auto no-scrollbar transition-all duration-300`}>
         
-        {/* Main Application Body */}
+        <GlobalMultiplayer currentUser={user} onNavigateToGame={() => {}} />
+      {/* Main Application Body */}
         <main className="flex-1 w-full overflow-hidden">
           {isAdminView ? (
             isAdminLoggedIn ? (

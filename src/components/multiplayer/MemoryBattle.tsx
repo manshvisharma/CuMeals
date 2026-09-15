@@ -93,12 +93,23 @@ export const MemoryBattle: React.FC<MemoryBattleProps> = ({ currentUser, session
         const scoreKey = isPlayer1 ? 'player1Score' : 'player2Score';
         const newScore = (session?.gameState?.[scoreKey] || 0) + 10;
         
-        updateGameState(sessionId, {
-          gameState: {
-            ...session?.gameState,
-            [scoreKey]: newScore
-          }
-        });
+        if (newScore === (cards.length / 2) * 10) {
+          updateGameState(sessionId, {
+            status: 'finished',
+            winnerId: currentUser?.uid,
+            gameState: {
+              ...session?.gameState,
+              [scoreKey]: newScore
+            }
+          });
+        } else {
+          updateGameState(sessionId, {
+            gameState: {
+              ...session?.gameState,
+              [scoreKey]: newScore
+            }
+          });
+        }
         
         setFlipped([]);
       } else {
