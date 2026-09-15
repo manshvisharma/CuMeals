@@ -43,7 +43,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({ selectedDate, onSelectDate }
         <div>
           <div className="flex items-center gap-2.5">
             <CuMealsLogo size="sm" rounded="rounded-xl" />
-            <h1 className="text-2xl font-bold text-slate-100 tracking-tight">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               CuMeals
             </h1>
           </div>
@@ -55,7 +55,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({ selectedDate, onSelectDate }
         {/* Notice Bell Button */}
         <button
           onClick={() => setIsNoticeOpen(true)}
-          className="relative w-11 h-11 rounded-full bg-[#131722] flex items-center justify-center text-slate-200 hover:scale-105 active:scale-95 transition-all border border-slate-800"
+          className="relative w-11 h-11 rounded-full bg-white dark:bg-[#131722] flex items-center justify-center text-slate-700 dark:text-slate-200 hover:scale-105 active:scale-95 transition-all border border-slate-100 dark:border-slate-800"
           aria-label="Notice Board"
         >
           <Bell size={20} strokeWidth={2.2} />
@@ -75,11 +75,11 @@ export const MenuPage: React.FC<MenuPageProps> = ({ selectedDate, onSelectDate }
       {/* Date Title Banner */}
       <div className="flex items-center justify-between mb-4 px-1">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             {relativeDayText} • {formattedDateLong}
           </span>
           {isToday && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30">
               Today
             </span>
           )}
@@ -88,7 +88,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({ selectedDate, onSelectDate }
         {!isToday && (
           <button
             onClick={() => onSelectDate(todayStr)}
-            className="text-xs font-semibold text-indigo-400 hover:underline"
+            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
           >
             Go to Today
           </button>
@@ -145,14 +145,14 @@ export const MenuPage: React.FC<MenuPageProps> = ({ selectedDate, onSelectDate }
         </div>
       ) : (
         /* Empty / Not Available State */
-        <div className="p-7 text-center rounded-[32px] bg-slate-900/90 border border-slate-800 shadow-xl my-4 animate-fadeIn">
+        <div className="p-7 text-center rounded-[32px] bg-white dark:bg-slate-900/90 border border-slate-100 dark:border-slate-800 shadow-xl my-4 animate-fadeIn">
           <div className="w-16 h-16 rounded-3xl bg-indigo-500/10 text-indigo-400 mx-auto flex items-center justify-center mb-4 border border-indigo-500/20 shadow-inner">
             <Utensils size={28} className="text-indigo-400" />
           </div>
-          <h3 className="text-lg font-bold text-slate-100 mb-1.5">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1.5">
             Menu will be updated soon
           </h3>
-          <p className="text-xs text-slate-400 max-w-xs mx-auto mb-6 leading-relaxed font-medium">
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto mb-6 leading-relaxed font-medium">
             The menu for {formattedDateLong} has not been posted by the mess committee yet. Please check back later.
           </p>
 

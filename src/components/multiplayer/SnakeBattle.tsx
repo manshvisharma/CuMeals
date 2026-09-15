@@ -313,7 +313,7 @@ export const SnakeBattle: React.FC<SnakeBattleProps> = ({ currentUser, sessionId
           </div>
 
           <div 
-            className="w-full max-w-[300px] mx-auto aspect-square bg-[#0f111a] rounded-xl relative overflow-hidden shadow-inner border-2 border-slate-800"
+            className="w-full max-w-[300px] mx-auto aspect-square bg-slate-100 dark:bg-[#0f111a] rounded-xl relative overflow-hidden shadow-inner border-2 border-slate-200 dark:border-slate-800"
             style={{ 
               display: 'grid', 
               gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,

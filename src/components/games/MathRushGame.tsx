@@ -239,7 +239,7 @@ export const MathRushGame: React.FC<MathRushGameProps> = ({ playerName, userEmai
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={onBack}
-          className="p-2.5 rounded-2xl bg-[#131722] text-slate-200 border border-slate-800 shadow-sm active:scale-95 transition-all flex items-center gap-1.5 text-xs font-bold"
+          className="p-2.5 rounded-2xl bg-white dark:bg-[#131722] text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-800 shadow-sm active:scale-95 transition-all flex items-center gap-1.5 text-xs font-bold"
         >
           <ArrowLeft size={16} />
           <span>Exit</span>
@@ -260,7 +260,7 @@ export const MathRushGame: React.FC<MathRushGameProps> = ({ playerName, userEmai
 
       {!isPlaying && !gameOver ? (
         /* Welcome / Start Screen */
-        <div className="p-7 rounded-[32px] bg-[#131722] border border-slate-800 shadow-xl text-center space-y-5">
+        <div className="p-7 rounded-[32px] bg-white dark:bg-[#131722] border border-slate-100 dark:border-slate-800 shadow-xl text-center space-y-5">
           <div className="w-16 h-16 rounded-[24px] bg-gradient-to-tr from-amber-500 to-rose-500 text-white mx-auto flex items-center justify-center shadow-lg shadow-amber-500/25">
             <Zap size={32} />
           </div>
@@ -295,7 +295,7 @@ export const MathRushGame: React.FC<MathRushGameProps> = ({ playerName, userEmai
         </div>
       ) : gameOver ? (
         /* Game Over Screen */
-        <div className="p-7 rounded-[32px] bg-[#131722] border border-slate-800 shadow-2xl text-center space-y-4 animate-scaleUp">
+        <div className="p-7 rounded-[32px] bg-white dark:bg-[#131722] border border-slate-100 dark:border-slate-800 shadow-2xl text-center space-y-4 animate-scaleUp">
           <div className="w-16 h-16 rounded-[24px] bg-rose-500/10 text-rose-500 mx-auto flex items-center justify-center">
             <Trophy size={32} />
           </div>
@@ -387,7 +387,7 @@ export const MathRushGame: React.FC<MathRushGameProps> = ({ playerName, userEmai
           </div>
 
           {/* Question Equation Display */}
-          <div className="p-8 rounded-[32px] bg-[#131722] border border-slate-800 shadow-none text-center">
+          <div className="p-8 rounded-[32px] bg-white dark:bg-[#131722] border border-slate-100 dark:border-slate-800 shadow-none text-center">
             <span className="text-xs font-bold uppercase tracking-widest text-slate-400 block mb-2">
               Solve Calculation
             </span>
@@ -402,7 +402,7 @@ export const MathRushGame: React.FC<MathRushGameProps> = ({ playerName, userEmai
               const isSelected = selectedAnswer === opt;
               const isCorrectAnswer = opt === currentQuestion.correctAnswer;
               
-              let btnStyle = 'bg-[#131722] text-white hover:bg-slate-800 border border-slate-800';
+              let btnStyle = 'bg-slate-100 dark:bg-[#131722] text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800';
 
               if (selectedAnswer !== null) {
                 if (isCorrectAnswer) {

@@ -50,7 +50,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen flex justify-center items-start sm:py-6 sm:px-4 bg-[#07090E] text-slate-100">
+    <div className="min-h-screen flex justify-center items-start sm:py-6 sm:px-4 bg-slate-50 dark:bg-[#07090E] text-slate-900 dark:text-slate-100">
       {/* Mandatory Auth Lock Screen if not signed in */}
       {authInitialized && !user && !isAdminView && (
         <MandatoryAuthScreen onSuccess={() => {}} />
@@ -59,9 +59,9 @@ export default function App() {
       {/* Responsive Container - Wide Desktop/Laptop for Admin, Compact Mobile for Student App */}
       <div className={`w-full ${
         isAdminView
-          ? 'max-w-6xl min-h-screen sm:min-h-[880px] sm:rounded-[32px] px-4 sm:px-8 pt-6 pb-12'
-          : 'max-w-md min-h-screen sm:min-h-[844px] sm:max-h-[92vh] sm:rounded-[40px] px-5 pt-6 pb-28 sm:pb-28'
-      } bg-[#0B0F19] text-slate-100 sm:border sm:border-slate-800/80 sm:shadow-2xl relative flex flex-col justify-between overflow-y-auto no-scrollbar transition-all duration-300`}>
+          ? 'max-w-6xl min-h-screen sm:min-h-[880px] sm:rounded-[32px] px-4 sm:px-8 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-12'
+          : 'max-w-md min-h-screen sm:min-h-[844px] sm:max-h-[92vh] sm:rounded-[40px] px-5 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-28 sm:pb-28'
+      } bg-white dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 sm:border sm:border-slate-100 dark:sm:border-slate-800/80 sm:shadow-2xl relative flex flex-col justify-between overflow-y-auto no-scrollbar transition-all duration-300`}>
         
         {/* Main Application Body */}
         <main className="flex-1 w-full overflow-hidden">

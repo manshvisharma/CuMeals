@@ -17,6 +17,7 @@ import { GlassCard } from '../components/GlassCard';
 import { InstallPrompt } from '../components/InstallPrompt';
 import { NoticeModal } from '../components/NoticeModal';
 import { UserProfileModal } from '../components/UserProfileModal';
+import { ThemeSettingCard } from "../components/ThemeSettingCard";
 import { CuMealsLogo } from '../components/CuMealsLogo';
 import { useMessConfig } from '../hooks/useMenu';
 import { subscribeToAuth } from '../firebase/auth';
@@ -92,10 +93,10 @@ export const MorePage: React.FC<MorePageProps> = ({ onOpenAdmin }) => {
         <CuMealsLogo size="md" rounded="rounded-[18px]" />
 
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-100">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             CuMeals
           </h1>
-          <p className="text-xs text-slate-400 font-medium">
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
             Good food, good mood.
           </p>
         </div>
@@ -133,6 +134,7 @@ export const MorePage: React.FC<MorePageProps> = ({ onOpenAdmin }) => {
 
       {/* Glass List Options */}
       <div className="space-y-2.5">
+        <ThemeSettingCard />
         
         {/* Notice Board */}
         <button
@@ -252,7 +254,7 @@ export const MorePage: React.FC<MorePageProps> = ({ onOpenAdmin }) => {
       {/* About Modal */}
       {activeModal === 'about' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-sm rounded-[32px] bg-slate-900 p-6 text-slate-100 border border-slate-800 shadow-2xl">
+          <div className="w-full max-w-sm rounded-[32px] bg-white dark:bg-slate-900 p-6 text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-800 shadow-2xl">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
                 <CuMealsLogo size="sm" rounded="rounded-lg" />
@@ -260,7 +262,7 @@ export const MorePage: React.FC<MorePageProps> = ({ onOpenAdmin }) => {
               </div>
               <button onClick={() => setActiveModal(null)} className="text-slate-400">✕</button>
             </div>
-            <p className="text-xs leading-relaxed text-slate-300 space-y-2">
+            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300 space-y-2">
               CuMeals provides daily hostel mess schedules, live timings, and meal updates directly on your device.
               <br /><br />
               • Rotational weekly menu updated regularly.<br />
@@ -310,7 +312,7 @@ export const MorePage: React.FC<MorePageProps> = ({ onOpenAdmin }) => {
                         className={`p-2 rounded-xl text-xs font-semibold text-left transition-all ${
                           feedbackCategory === cat.id
                             ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'bg-slate-800 text-slate-300 hover:bg-slate-750'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'
                         }`}
                       >
                         {cat.label}
@@ -329,7 +331,7 @@ export const MorePage: React.FC<MorePageProps> = ({ onOpenAdmin }) => {
                     value={feedbackText}
                     onChange={(e) => setFeedbackText(e.target.value)}
                     placeholder="Share details on meal taste, quantity, hygiene, or requested menu items..."
-                    className="w-full p-3.5 rounded-2xl bg-slate-800 border border-slate-700/60 text-xs text-slate-100 placeholder:text-slate-500 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                 </div>
 

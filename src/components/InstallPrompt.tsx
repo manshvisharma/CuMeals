@@ -54,13 +54,13 @@ export const InstallPrompt: React.FC = () => {
           <CuMealsLogo size="sm" rounded="rounded-xl" />
 
           <div>
-            <h4 className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+            <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
               <span>Install CuMeals App</span>
-              <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-extrabold uppercase">
+              <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 font-extrabold uppercase">
                 Web App
               </span>
             </h4>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
               1-tap access on Home Screen
             </p>
           </div>
@@ -77,7 +77,7 @@ export const InstallPrompt: React.FC = () => {
 
           <button
             onClick={() => setDismissed(true)}
-            className="p-1 rounded-full text-slate-400 hover:text-slate-200"
+            className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
             aria-label="Dismiss"
           >
             <X size={16} />
@@ -88,11 +88,11 @@ export const InstallPrompt: React.FC = () => {
       {/* iOS / Browser Install Help Modal */}
       {showIOSModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-fadeIn">
-          <div className="w-full max-w-sm rounded-[32px] bg-[#131722] border border-slate-800 p-6 shadow-2xl relative space-y-4">
+          <div className="w-full max-w-sm rounded-[32px] bg-white dark:bg-[#131722] border border-slate-100 dark:border-slate-800 p-6 shadow-2xl relative space-y-4">
             
             <button
               onClick={() => setShowIOSModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-white bg-slate-800/60"
+              className="absolute top-4 right-4 p-2 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800/60"
             >
               <X size={18} />
             </button>
@@ -102,38 +102,38 @@ export const InstallPrompt: React.FC = () => {
                 <Smartphone size={28} />
               </div>
 
-              <h3 className="text-lg font-bold text-white tracking-tight">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                 Install as Mobile App
               </h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Follow these simple steps to install CuMeals onto your home screen:
               </p>
             </div>
 
             <div className="space-y-2.5 pt-2">
-              <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-900/80 border border-slate-800">
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
                 <div className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                   1
                 </div>
                 <div className="text-xs">
-                  <p className="font-bold text-slate-200 flex items-center gap-1">
+                  <p className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
                     Tap the Share or Menu button <Share size={13} className="text-indigo-400 inline" />
                   </p>
-                  <p className="text-slate-400 text-[11px]">
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px]">
                     Located at the bottom of Safari or top-right of Chrome (⋮)
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-900/80 border border-slate-800">
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
                 <div className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                   2
                 </div>
                 <div className="text-xs">
-                  <p className="font-bold text-slate-200 flex items-center gap-1">
+                  <p className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
                     Select "Add to Home Screen" <PlusSquare size={13} className="text-emerald-400 inline" />
                   </p>
-                  <p className="text-slate-400 text-[11px]">
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px]">
                     Or "Install App" in your mobile browser options
                   </p>
                 </div>
