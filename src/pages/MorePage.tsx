@@ -210,28 +210,47 @@ export const MorePage: React.FC<MorePageProps> = ({ onOpenAdmin }) => {
           <ChevronRight size={18} className="text-slate-400" />
         </button>
 
-        {/* Admin Portal Button (Restricted to Authorized Admin: 17monusharma@gmail.com) */}
-        {isUserAdmin(currentUser?.email) && (
-          <div className="pt-3 animate-fadeIn">
-            <button
-              onClick={onOpenAdmin}
-              className="w-full text-left p-4.5 rounded-[24px] bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-600 dark:to-purple-700 text-white shadow-xl shadow-indigo-500/20 hover:shadow-indigo-500/35 hover:scale-[1.01] active:scale-98 transition-all flex items-center justify-between border border-white/20"
-            >
-              <div className="flex items-center gap-3.5">
-                <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-md text-white shadow-inner">
-                  <Lock size={20} strokeWidth={2.2} />
-                </div>
-                <div>
+        {/* Admin Portal Button */}
+        <div className="pt-3 animate-fadeIn">
+          <button
+            onClick={onOpenAdmin}
+            className={`w-full text-left p-4.5 rounded-[24px] ${
+              isUserAdmin(currentUser?.email)
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-500/25 border border-indigo-400/30'
+                : 'bg-white/70 dark:bg-slate-800/60 border border-white/80 dark:border-slate-800 shadow-sm hover:bg-white dark:hover:bg-slate-800 text-slate-900 dark:text-slate-100'
+            } transition-all flex items-center justify-between active:scale-98`}
+          >
+            <div className="flex items-center gap-3.5">
+              <div className={`p-3 rounded-2xl ${
+                isUserAdmin(currentUser?.email)
+                  ? 'bg-white/20 backdrop-blur-md text-white shadow-inner'
+                  : 'bg-slate-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200'
+              }`}>
+                <Lock size={20} strokeWidth={2.2} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
                   <p className="text-sm font-bold tracking-tight">Admin Portal</p>
-                  <p className="text-[11px] text-indigo-100 font-medium mt-0.5">Manage daily menus, JSON import & meal timings</p>
+                  {isUserAdmin(currentUser?.email) && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 text-white font-black uppercase">
+                      Admin
+                    </span>
+                  )}
                 </div>
+                <p className={`text-[11px] font-medium mt-0.5 ${
+                  isUserAdmin(currentUser?.email) ? 'text-indigo-100' : 'text-slate-400'
+                }`}>
+                  Manage menus, timings, push broadcasts & feedback
+                </p>
               </div>
-              <div className="p-1.5 rounded-full bg-white/20 text-white">
-                <ChevronRight size={18} strokeWidth={2.5} />
-              </div>
-            </button>
-          </div>
-        )}
+            </div>
+            <div className={`p-1.5 rounded-full ${
+              isUserAdmin(currentUser?.email) ? 'bg-white/20 text-white' : 'text-slate-400'
+            }`}>
+              <ChevronRight size={18} strokeWidth={2.5} />
+            </div>
+          </button>
+        </div>
 
       </div>
 

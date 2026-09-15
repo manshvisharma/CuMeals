@@ -27,6 +27,9 @@ try {
 // API ROUTES FIRST
 // ----------------------------------------------------
 
+// In-memory subscribers registry (serves as immediate sync bridge)
+const serverSubscribers = new Map<string, any>();
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
@@ -35,6 +38,25 @@ app.get('/api/health', (req, res) => {
 // Get Public VAPID Key for client subscriptions
 app.get('/api/vapid-public-key', (req, res) => {
   res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
+
+// Register / update a subscription directly on server
+app.post('/api/register-subscription', (req, res) => {
+  const sub = req.body;
+  if (sub && sub.endpoint) {
+    serverSubscribers.set(sub.endpoint, sub);
+    return res.json({ success: true, count: serverSubscribers.size });
+  }
+  return res.status(400).json({ error: 'Invalid subscription data' });
+});
+
+// Get all subscribers from server registry
+app.get('/api/subscribers', (req, res) => {
+  res.json({
+    success: true,
+    count: serverSubscribers.size,
+    subscribers: Array.from(serverSubscribers.values())
+  });
 });
 
 // Test push notification to a specific client subscription

@@ -11,6 +11,8 @@ try {
   console.error('VAPID setup error:', e);
 }
 
+const globalSubscribers = new Map<string, any>();
+
 // Handler for Vercel Serverless Functions (/api/...)
 export default async function handler(req: Request, res: Response) {
   // Extract path
@@ -22,6 +24,23 @@ export default async function handler(req: Request, res: Response) {
 
   if (req.method === 'GET' && (url.endsWith('/vapid-public-key') || url.includes('vapid-public-key'))) {
     return res.status(200).json({ publicKey: VAPID_PUBLIC_KEY });
+  }
+
+  if (req.method === 'POST' && (url.endsWith('/register-subscription') || url.includes('register-subscription'))) {
+    const sub = req.body;
+    if (sub && sub.endpoint) {
+      globalSubscribers.set(sub.endpoint, sub);
+      return res.status(200).json({ success: true, count: globalSubscribers.size });
+    }
+    return res.status(400).json({ error: 'Invalid subscription data' });
+  }
+
+  if (req.method === 'GET' && (url.endsWith('/subscribers') || url.includes('subscribers'))) {
+    return res.status(200).json({
+      success: true,
+      count: globalSubscribers.size,
+      subscribers: Array.from(globalSubscribers.values())
+    });
   }
 
   if (req.method === 'POST' && (url.endsWith('/test-push') || url.includes('test-push'))) {

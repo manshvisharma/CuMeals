@@ -119,7 +119,14 @@ export async function subscribeToPushNotifications(currentUser?: User | null): P
 
     // 4. Save subscription to Firestore for backend dispatch
     const subJSON = subscription.toJSON();
-    const endpointHash = btoa(subscription.endpoint).slice(-32).replace(/[^a-zA-Z0-9]/g, '_');
+    // Safe base64url clean document id for Firestore (no slashes, pluses or equals)
+    const cleanId = btoa(encodeURIComponent(subscription.endpoint))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '')
+      .slice(-40);
+    
+    const endpointHash = cleanId || `sub_${Date.now()}`;
     
     const deviceType = status.isIOS 
       ? 'ios' 
@@ -137,16 +144,38 @@ export async function subscribeToPushNotifications(currentUser?: User | null): P
       createdAt: serverTimestamp()
     };
 
-    const subDocRef = doc(db, 'push_subscriptions', endpointHash);
+    // Save to Firestore
     try {
+      const subDocRef = doc(db, 'push_subscriptions', endpointHash);
       await setDoc(subDocRef, subData, { merge: true });
     } catch (dbErr: any) {
-      console.warn('Firestore subscription sync warning:', dbErr?.message);
+      console.warn('Firestore subscription sync error:', dbErr?.message);
+    }
+
+    // Also register with server backend API directly so it's always tracked
+    try {
+      await fetch('/api/register-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: endpointHash,
+          ...subData,
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString()
+        })
+      });
+    } catch (apiErr) {
+      // Ignore background network error
     }
 
     // Local marker
     localStorage.setItem('cumeals_push_subscribed', 'true');
     localStorage.setItem('cumeals_push_endpoint_hash', endpointHash);
+    localStorage.setItem('cumeals_cached_push_subscription', JSON.stringify({
+      id: endpointHash,
+      ...subData,
+      updatedAt: new Date().toISOString()
+    }));
 
     // Show initial confirmation via SW
     try {
@@ -243,15 +272,74 @@ export async function sendTestPushAlert(title = 'CuMeals Test Alert', body = 'Te
   }
 }
 
-// Fetch all active subscribers from Firestore for Admin
+// Fetch all active subscribers for Admin (Firestore + Server API + Local device sync)
 export async function getAllPushSubscribers(): Promise<any[]> {
+  const map = new Map<string, any>();
+
+  // 1. Try Firestore
   try {
     const snap = await getDocs(collection(db, 'push_subscriptions'));
-    const list: any[] = [];
-    snap.forEach(d => list.push({ id: d.id, ...d.data() }));
-    return list;
+    snap.forEach(d => {
+      const data = d.data();
+      if (data && data.endpoint) {
+        map.set(data.endpoint, { id: d.id, ...data });
+      }
+    });
   } catch (e) {
-    console.error('Error fetching subscribers', e);
-    return [];
+    console.warn('Firestore fetch push_subscriptions note:', e);
   }
+
+  // 2. Try Server API backend
+  try {
+    const res = await fetch('/api/subscribers');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.subscribers && Array.isArray(data.subscribers)) {
+        for (const sub of data.subscribers) {
+          if (sub && sub.endpoint && !map.has(sub.endpoint)) {
+            map.set(sub.endpoint, sub);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // Ignore server error
+  }
+
+  // 3. Fallback: If current device is subscribed locally, ensure it appears
+  try {
+    const localCached = localStorage.getItem('cumeals_cached_push_subscription');
+    if (localCached) {
+      const parsed = JSON.parse(localCached);
+      if (parsed?.endpoint && !map.has(parsed.endpoint)) {
+        map.set(parsed.endpoint, parsed);
+      }
+    }
+
+    // Also check PushManager directly if available
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      const reg = await navigator.serviceWorker.ready;
+      const currentSub = await reg.pushManager.getSubscription();
+      if (currentSub && !map.has(currentSub.endpoint)) {
+        const subJSON = currentSub.toJSON();
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const deviceType = isIOS ? 'ios' : (/Android/i.test(navigator.userAgent) ? 'android' : 'desktop');
+        const fallbackSub = {
+          id: 'device_current',
+          endpoint: currentSub.endpoint,
+          keys: subJSON.keys,
+          deviceType,
+          isStandalone: window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true,
+          userName: 'Current Device',
+          userEmail: 'Local Active Subscriber',
+          updatedAt: new Date().toISOString()
+        };
+        map.set(currentSub.endpoint, fallbackSub);
+      }
+    }
+  } catch (e) {
+    // Ignore
+  }
+
+  return Array.from(map.values());
 }
