@@ -120,7 +120,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-black/70 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 dark:bg-black/70 backdrop-blur-md animate-fadeIn">
       <div className="w-full max-w-sm rounded-[36px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white dark:border-slate-800 shadow-2xl p-6 text-slate-900 dark:text-slate-100 animate-scaleUp max-h-[90vh] overflow-y-auto no-scrollbar">
         
         {/* Header */}
