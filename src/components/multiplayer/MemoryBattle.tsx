@@ -125,7 +125,7 @@ export const MemoryBattle: React.FC<MemoryBattleProps> = ({ currentUser, session
   const oppScore = isPlayer1 ? (state.player2Score || 0) : (state.player1Score || 0);
 
   return (
-    <div className="w-full bg-white dark:bg-[#131722] rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+    <div className="w-full bg-white dark:bg-[#1d1b18] rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
       <div className="flex items-center justify-between mb-6">
         <button onClick={onLeave} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors">
           <ArrowLeft size={20} />

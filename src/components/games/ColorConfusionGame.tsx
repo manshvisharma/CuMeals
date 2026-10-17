@@ -184,7 +184,7 @@ export const ColorConfusionGame: React.FC<ColorConfusionGameProps> = ({ playerNa
 
       {/* Start Screen */}
       {!isPlaying && !gameOver ? (
-        <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-[#131722] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 w-full max-w-sm">
+        <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-[#1d1b18] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 w-full max-w-sm">
           <div className="w-20 h-20 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center mb-6">
             <BrainCircuit size={40} className="text-pink-500" />
           </div>
@@ -202,7 +202,7 @@ export const ColorConfusionGame: React.FC<ColorConfusionGameProps> = ({ playerNa
           </button>
         </div>
       ) : gameOver ? (
-        <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-[#131722] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 w-full max-w-sm text-center">
+        <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-[#1d1b18] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 w-full max-w-sm text-center">
           <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 mb-2">Game Over!</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Your brain got confused.</p>
           
@@ -240,7 +240,7 @@ export const ColorConfusionGame: React.FC<ColorConfusionGameProps> = ({ playerNa
         <div className="w-full max-w-sm flex flex-col items-center">
           {/* Game Stats & Timer */}
           <div className="w-full flex justify-between items-center mb-6">
-            <div className="bg-white dark:bg-[#131722] px-4 py-2 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+            <div className="bg-white dark:bg-[#1d1b18] px-4 py-2 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
               <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Score</span>
               <span className="text-xl font-black text-slate-800 dark:text-slate-100">{score}</span>
             </div>
@@ -255,7 +255,7 @@ export const ColorConfusionGame: React.FC<ColorConfusionGameProps> = ({ playerNa
           </div>
 
           {/* The Confusion Word Container */}
-          <div className={`w-full aspect-square max-h-[250px] flex items-center justify-center mb-8 relative transition-all duration-300 shadow-sm border border-slate-100 dark:border-slate-800 ${distractorShape} ${distractorBg ? distractorBg.bgClass : 'bg-white dark:bg-[#131722]'}`}>
+          <div className={`w-full aspect-square max-h-[250px] flex items-center justify-center mb-8 relative transition-all duration-300 shadow-sm border border-slate-100 dark:border-slate-800 ${distractorShape} ${distractorBg ? distractorBg.bgClass : 'bg-white dark:bg-[#1d1b18]'}`}>
             <div className={`absolute top-4 left-0 w-full text-center text-xs font-bold ${distractorBg ? 'text-white/60' : 'text-slate-400'}`}>
               WHAT COLOR IS THIS TEXT?
             </div>

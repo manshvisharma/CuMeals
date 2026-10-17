@@ -1,6 +1,7 @@
-import React from 'react';
-import { Calendar } from 'lucide-react';
-import { getDayNumber, getShortDayName, addDays, getTodayString } from '../utils/dateUtils';
+import React, { useEffect, useState } from 'react';
+import { Icon } from './bento/Icon';
+import { addDays, getDayNumber, getShortDayName, getTodayString } from '../utils/dateUtils';
+import { haptics } from '../utils/haptics';
 
 interface DateSelectorProps {
   selectedDate: string;
@@ -8,86 +9,73 @@ interface DateSelectorProps {
   onOpenCalendar: () => void;
 }
 
-export const DateSelector: React.FC<DateSelectorProps> = ({
-  selectedDate,
-  onSelectDate,
-  onOpenCalendar
-}) => {
+/** 7-day strip (selected day always inside the visible week) + week arrows + calendar button. */
+export const DateSelector: React.FC<DateSelectorProps> = ({ selectedDate, onSelectDate, onOpenCalendar }) => {
   const todayStr = getTodayString();
-  const tomorrowStr = addDays(todayStr, 1);
-  const yesterdayStr = addDays(todayStr, -1);
+  const [winStart, setWinStart] = useState<string>(() => addDays(selectedDate, -3));
 
-  // Generate 5 surrounding dates centered around selectedDate
-  const surroundingDates = [
-    addDays(selectedDate, -2),
-    addDays(selectedDate, -1),
-    selectedDate,
-    addDays(selectedDate, 1),
-    addDays(selectedDate, 2)
-  ];
+  // Keep the picked day visible (e.g. after choosing a date in the calendar).
+  useEffect(() => {
+    const end = addDays(winStart, 6);
+    if (selectedDate < winStart || selectedDate > end) setWinStart(addDays(selectedDate, -3));
+  }, [selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const getCustomLabel = (dateStr: string) => {
-    if (dateStr === todayStr) return 'Today';
-    if (dateStr === tomorrowStr) return 'Tmrw';
-    if (dateStr === yesterdayStr) return 'Yest';
-    return getShortDayName(dateStr);
-  };
+  const days = Array.from({ length: 7 }, (_, i) => addDays(winStart, i));
 
   return (
-    <div className="mb-4">
-      <div className="flex items-center gap-2">
-        {/* Date Pills Bar Container */}
-        <div className="flex-1 flex items-center justify-between gap-1.5 bg-white dark:bg-[#131722] p-1.5 rounded-[26px] border border-slate-100 dark:border-slate-800/80 shadow-sm overflow-x-auto no-scrollbar">
-          {surroundingDates.map((dateStr) => {
-            const isSelected = dateStr === selectedDate;
-            const isToday = dateStr === todayStr;
-            const isTomorrow = dateStr === tomorrowStr;
-            const dayNum = getDayNumber(dateStr);
-            const label = getCustomLabel(dateStr);
-
-            return (
-              <button
-                key={dateStr}
-                onClick={() => onSelectDate(dateStr)}
-                className={`
-                  relative flex-1 min-w-[46px] py-2 px-1 rounded-[20px] flex flex-col items-center justify-center transition-all duration-200 ease-out active:scale-95
-                  ${isSelected
-                    ? 'bg-indigo-600 text-white shadow-md z-10'
-                    : 'bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-200'
-                  }
-                `}
-              >
-                {/* Special Highlight Dot for Today & Tomorrow */}
-                {(isToday || isTomorrow) && !isSelected && (
-                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                )}
-
-                <span className={`text-sm font-extrabold leading-tight ${isSelected ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
-                  {dayNum}
-                </span>
-
-                <span className={`text-[10px] font-bold mt-0.5 tracking-tight ${
-                  isSelected
-                    ? 'text-indigo-100'
-                    : (isToday || isTomorrow)
-                    ? 'text-indigo-400 font-extrabold'
-                    : 'text-slate-500'
-                }`}>
-                  {label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Calendar Trigger Button */}
+    <div className="b-week">
+      <div className="weekstrip">
         <button
-          onClick={onOpenCalendar}
-          className="p-3.5 rounded-[22px] bg-white dark:bg-[#131722] border border-slate-100 dark:border-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm active:scale-95 shrink-0 flex items-center justify-center"
-          title="Open Calendar"
-          aria-label="Open Calendar"
+          type="button"
+          className="wk-arrow"
+          aria-label="Previous week"
+          onClick={() => {
+            haptics.fire('select');
+            setWinStart(addDays(winStart, -7));
+          }}
         >
-          <Calendar size={20} strokeWidth={2.2} />
+          <Icon name="left" size={18} sw={2.2} />
+        </button>
+        <div className="wk-days">
+          {days.map((d) => (
+            <button
+              key={d}
+              type="button"
+              className={`wk-day ${d === selectedDate ? 'on' : ''} ${d === todayStr ? 'today' : ''}`}
+              aria-label={d}
+              aria-pressed={d === selectedDate}
+              onClick={() => {
+                haptics.fire('select');
+                onSelectDate(d);
+              }}
+            >
+              <small>{getShortDayName(d)}</small>
+              <b>{getDayNumber(d)}</b>
+              <i />
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="wk-arrow"
+          aria-label="Next week"
+          onClick={() => {
+            haptics.fire('select');
+            setWinStart(addDays(winStart, 7));
+          }}
+        >
+          <Icon name="right" size={18} sw={2.2} />
+        </button>
+        <button
+          type="button"
+          className="b-cal-btn"
+          aria-label="Open calendar"
+          onClick={() => {
+            haptics.fire('light');
+            onOpenCalendar();
+          }}
+        >
+          <Icon name="calendar" size={20} />
         </button>
       </div>
     </div>

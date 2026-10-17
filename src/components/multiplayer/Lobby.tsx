@@ -109,7 +109,7 @@ export const Lobby: React.FC<LobbyProps> = ({ currentUser, playerName, onJoinGam
   return (
     <div className="w-full space-y-4">
       {/* Game Selector */}
-      <div className="bg-white dark:bg-[#131722] rounded-3xl p-4 shadow-sm border border-slate-100 dark:border-slate-800">
+      <div className="bg-white dark:bg-[#1d1b18] rounded-3xl p-4 shadow-sm border border-slate-100 dark:border-slate-800">
         <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">Select Battle Mode</h4>
         <div className="grid grid-cols-3 gap-2">
           <button
@@ -187,7 +187,7 @@ export const Lobby: React.FC<LobbyProps> = ({ currentUser, playerName, onJoinGam
       )}
 
       {/* Online Players */}
-      <div className="bg-white dark:bg-[#131722] rounded-3xl p-4 shadow-sm border border-slate-100 dark:border-slate-800">
+      <div className="bg-white dark:bg-[#1d1b18] rounded-3xl p-4 shadow-sm border border-slate-100 dark:border-slate-800">
         <div className="flex items-center justify-between mb-4">
           <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Online Players</h4>
           <div className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-full flex items-center gap-1.5">

@@ -1,8 +1,10 @@
 import { db } from '../firebase/config';
 import { doc, setDoc, deleteDoc, serverTimestamp, collection, getDocs } from 'firebase/firestore';
 import { User } from 'firebase/auth';
+import type { DeviceAlertPrefs } from '../types';
+import { getSnackBlock } from './prefs';
 
-export const VAPID_PUBLIC_KEY = "BMw-6JzSeK_hA_1oQL4IuE8SCv8KK2jjbLuDLJIxfkEll1qoVMW_8Xx4fS2nF8tKZe4VAec7b3y34ok61zpQ4As";
+export const VAPID_PUBLIC_KEY = "BPKOR87_66XoOfT48lnAHu_nRv2zxODlaN9yMsvvlEnOVc_WxOQDbPDqM2ikt-CxVm_VPi-bnI3qnWw40RMw2QE";
 
 export interface PushStatus {
   isSupported: boolean;
@@ -68,6 +70,51 @@ export function getPushStatus(): PushStatus {
     permission,
     isSubscribed: savedSub && permission === 'granted'
   };
+}
+
+const PREFS_KEY = 'cumeals_alert_prefs';
+
+export const DEFAULT_ALERT_PREFS: DeviceAlertPrefs = {
+  breakfast: true,
+  lunch: true,
+  snacks: true,
+  dinner: true,
+  snacksBlock: 'boys'
+};
+
+/** This device's meal-alert choices (which meals + which snacks block). */
+export function getAlertPrefs(): DeviceAlertPrefs {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null');
+    if (raw && typeof raw === 'object') {
+      return {
+        breakfast: raw.breakfast !== false,
+        lunch: raw.lunch !== false,
+        snacks: raw.snacks !== false,
+        dinner: raw.dinner !== false,
+        snacksBlock: getSnackBlock()
+      };
+    }
+  } catch {
+    /* ignore */
+  }
+  return { ...DEFAULT_ALERT_PREFS, snacksBlock: getSnackBlock() };
+}
+
+/** Save choices on this device and on this device's subscription record (read by the server). */
+export async function saveAlertPrefs(prefs: DeviceAlertPrefs): Promise<void> {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    /* ignore */
+  }
+  const id = localStorage.getItem('cumeals_push_endpoint_hash');
+  if (!id) return;
+  try {
+    await setDoc(doc(db, 'push_subscriptions', id), { alertPrefs: prefs, updatedAt: serverTimestamp() }, { merge: true });
+  } catch (e) {
+    console.warn('Could not sync alert preferences:', (e as any)?.message);
+  }
 }
 
 // Normalize subscriber object and device type
@@ -165,6 +212,7 @@ export async function subscribeToPushNotifications(currentUser?: User | null): P
       keys: subJSON.keys,
       deviceType,
       isStandalone: status.isStandalone,
+      alertPrefs: getAlertPrefs(),
       userId: currentUser?.uid || 'anonymous',
       userEmail: currentUser?.email || 'Anonymous Student',
       userName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Student',

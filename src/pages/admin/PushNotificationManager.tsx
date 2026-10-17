@@ -35,6 +35,9 @@ export const PushNotificationManager: React.FC = () => {
 
   const [serverTimeIST, setServerTimeIST] = useState<string>('');
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [usingFallbackKeys, setUsingFallbackKeys] = useState(false);
+  const [apiReachable, setApiReachable] = useState<boolean | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   // Broadcast Form State
   const [title, setTitle] = useState('CuMeals Mess Update 🍲');
@@ -64,6 +67,8 @@ export const PushNotificationManager: React.FC = () => {
       const res = await fetch('/api/automation-status');
       if (res.ok) {
         const data = await res.json();
+        setApiReachable(true);
+        setUsingFallbackKeys(Boolean(data.usingFallbackVapidKeys));
         if (data.settings) {
           setAutoSettings(data.settings);
         }
@@ -75,6 +80,7 @@ export const PushNotificationManager: React.FC = () => {
         }
       }
     } catch (e) {
+      setApiReachable(false);
       console.warn('Could not fetch server automation status', e);
     }
   };
@@ -90,21 +96,6 @@ export const PushNotificationManager: React.FC = () => {
       ]);
       setMenuToday(mToday);
       setTimings(tData);
-
-      // Sync menu and timings with backend server
-      if (tData || mToday) {
-        fetch('/api/sync-menu-timings', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            timings: tData,
-            menus: {
-              [todayStr]: mToday,
-              [todayDay]: mToday
-            }
-          })
-        }).catch(() => {});
-      }
     } catch (err) {
       console.error('Error loading menu/timings for push manager:', err);
     } finally {
@@ -127,14 +118,17 @@ export const PushNotificationManager: React.FC = () => {
   const handleUpdateSetting = async (updater: (prev: MealAlertSettings) => MealAlertSettings) => {
     const updated = updater(autoSettings);
     setAutoSettings(updated);
+    setSettingsError(null);
     try {
-      await fetch('/api/automation-settings', {
+      const res = await fetch('/api/automation-settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated)
       });
-    } catch (err) {
-      console.error('Failed to sync settings with server', err);
+      if (!res.ok) throw new Error('Server answered ' + res.status);
+    } catch (err: any) {
+      console.error('Failed to save settings', err);
+      setSettingsError('Could not save this change (' + (err?.message || 'network error') + '). Please try again.');
     }
   };
 
@@ -450,6 +444,43 @@ export const PushNotificationManager: React.FC = () => {
                 <span>{autoSettings.enabled ? 'Automation Enabled' : 'Automation Paused'}</span>
               </button>
             </div>
+
+            {apiReachable === false && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300">
+                The notification server can't be reached from here, so changes can't be saved. On a deployed site this means /api isn't running – check the deployment logs.
+              </div>
+            )}
+            {settingsError && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300" role="alert">{settingsError}</div>
+            )}
+            {usingFallbackKeys && (
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300">
+                Security notice: the server is still using the push keys that came with the project. Set your own <b>VAPID_PRIVATE_KEY</b> (see docs/NOTIFICATIONS_SETUP.md).
+              </div>
+            )}
+
+            {/* Lead time for the "menu reminder" */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800">
+              <div>
+                <p className="text-xs font-bold text-slate-200">Menu reminder before each meal</p>
+                <p className="text-[11px] text-slate-400">Students get today's menu this long before the meal starts.</p>
+              </div>
+              <select
+                value={autoSettings.leadMinutes || 60}
+                onChange={(e) => handleUpdateSetting(prev => ({ ...prev, leadMinutes: Number(e.target.value) }))}
+                className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs font-bold text-white"
+                aria-label="Reminder lead time"
+              >
+                {[15, 30, 45, 60, 90, 120].map((m) => (
+                  <option key={m} value={m}>{m === 60 ? '1 hour' : m === 120 ? '2 hours' : m === 90 ? '1.5 hours' : `${m} minutes`} before</option>
+                ))}
+              </select>
+            </div>
+
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              Alerts are sent by a scheduler that checks every few minutes (GitHub Actions or the built-in timer – see docs/NOTIFICATIONS_SETUP.md).
+              Each alert is sent once per day; students can switch individual meals off on their own phone.
+            </p>
 
             {/* Notification Trigger Toggles */}
             <div className="space-y-3">

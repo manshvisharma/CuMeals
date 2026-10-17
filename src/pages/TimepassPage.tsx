@@ -89,29 +89,29 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
 
 
   // Active Solo Game Renders
-  if (activeGame === 'memory_v3') return <div className="pb-32 pt-2"><MemoryGame playerName={playerName} userEmail={currentUser?.email || undefined} onBack={() => setActiveGame(null)} /></div>;
-  if (activeGame === 'mathRush') return <div className="pb-32 pt-2"><MathRushGame playerName={playerName} userEmail={currentUser?.email || undefined} onBack={() => setActiveGame(null)} /></div>;
-  if (activeGame === 'colorConfusion_v2') return <div className="pb-32 pt-2"><ColorConfusionGame playerName={playerName} userEmail={currentUser?.email || undefined} onBack={() => setActiveGame(null)} /></div>;
+  if (activeGame === 'memory_v3') return <div><MemoryGame playerName={playerName} userEmail={currentUser?.email || undefined} onBack={() => setActiveGame(null)} /></div>;
+  if (activeGame === 'mathRush') return <div><MathRushGame playerName={playerName} userEmail={currentUser?.email || undefined} onBack={() => setActiveGame(null)} /></div>;
+  if (activeGame === 'colorConfusion_v2') return <div><ColorConfusionGame playerName={playerName} userEmail={currentUser?.email || undefined} onBack={() => setActiveGame(null)} /></div>;
 
   // Active Multiplayer Battle Renders
   if (activeBattle) {
     if (activeBattle.type === 'snake') {
       return (
-        <div className="pb-32 pt-2">
+        <div>
           <SnakeBattle currentUser={currentUser} sessionId={activeBattle.sessionId} opponentName={activeBattle.opponentName} isPlayer1={activeBattle.isPlayer1} onLeave={() => setActiveBattle(null)} />
         </div>
       );
     }
     if (activeBattle.type === 'word') {
       return (
-        <div className="pb-32 pt-2">
+        <div>
           <WordBattle currentUser={currentUser} sessionId={activeBattle.sessionId} opponentName={activeBattle.opponentName} isPlayer1={activeBattle.isPlayer1} onLeave={() => setActiveBattle(null)} />
         </div>
       );
     }
     if (activeBattle.type === 'memory') {
       return (
-        <div className="pb-32 pt-2">
+        <div>
           <MemoryBattle currentUser={currentUser} sessionId={activeBattle.sessionId} opponentName={activeBattle.opponentName} isPlayer1={activeBattle.isPlayer1} onLeave={() => setActiveBattle(null)} />
         </div>
       );
@@ -119,7 +119,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
   }
 
   return (
-    <div className="pb-32 animate-fadeIn pt-2 max-w-md mx-auto">
+    <div className="animate-fadeIn">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
@@ -166,19 +166,19 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
       <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl mb-6 shadow-inner text-sm font-bold">
         <button
           onClick={() => setMainTab('minigames')}
-          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1 ${mainTab === 'minigames' ? 'bg-white dark:bg-[#131722] text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1 ${mainTab === 'minigames' ? 'bg-white dark:bg-[#1d1b18] text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
         >
           <Gamepad2 size={16} /> Solo
         </button>
         <button
           onClick={() => setMainTab('battles')}
-          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1 ${mainTab === 'battles' ? 'bg-white dark:bg-[#131722] text-rose-500 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1 ${mainTab === 'battles' ? 'bg-white dark:bg-[#1d1b18] text-rose-500 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
         >
           <Swords size={16} /> Battle
         </button>
         <button
           onClick={() => setMainTab('leaderboards')}
-          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1 ${mainTab === 'leaderboards' ? 'bg-white dark:bg-[#131722] text-amber-500 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1 ${mainTab === 'leaderboards' ? 'bg-white dark:bg-[#1d1b18] text-amber-500 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
         >
           <Trophy size={16} /> Ranks
         </button>
@@ -191,7 +191,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
             {/* Math Rush Card */}
             <div 
               onClick={() => setActiveGame('mathRush')}
-              className="group relative overflow-hidden bg-white dark:bg-[#131722] rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all cursor-pointer hover:-translate-y-1 active:translate-y-0"
+              className="group relative overflow-hidden bg-white dark:bg-[#1d1b18] rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all cursor-pointer hover:-translate-y-1 active:translate-y-0"
             >
               <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 dark:from-indigo-500/20 dark:to-purple-500/20 rounded-full blur-2xl -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-500" />
               <div className="flex items-center gap-4 mb-3 relative">
@@ -209,7 +209,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
             {/* Memory Match Card */}
             <div 
               onClick={() => setActiveGame('memory_v3')}
-              className="group relative overflow-hidden bg-white dark:bg-[#131722] rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-800 transition-all cursor-pointer hover:-translate-y-1 active:translate-y-0"
+              className="group relative overflow-hidden bg-white dark:bg-[#1d1b18] rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-800 transition-all cursor-pointer hover:-translate-y-1 active:translate-y-0"
             >
               <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/20 rounded-full blur-2xl -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-500" />
               <div className="flex items-center gap-4 mb-3 relative">
@@ -227,7 +227,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
             {/* Color Confusion Card */}
             <div 
               onClick={() => setActiveGame('colorConfusion_v2')}
-              className="group relative overflow-hidden bg-white dark:bg-[#131722] rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800 hover:border-rose-200 dark:hover:border-rose-800 transition-all cursor-pointer hover:-translate-y-1 active:translate-y-0"
+              className="group relative overflow-hidden bg-white dark:bg-[#1d1b18] rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800 hover:border-rose-200 dark:hover:border-rose-800 transition-all cursor-pointer hover:-translate-y-1 active:translate-y-0"
             >
               <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-rose-500/10 to-orange-500/10 dark:from-rose-500/20 dark:to-orange-500/20 rounded-full blur-2xl -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-500" />
               <div className="flex items-center gap-4 mb-3 relative">
@@ -275,7 +275,7 @@ export const TimepassPage: React.FC<TimepassPageProps> = ({ currentUser }) => {
 
       {/* Leaderboards Content */}
       {mainTab === 'leaderboards' && (
-        <div className="bg-white dark:bg-[#131722] rounded-3xl p-5 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-100 dark:border-slate-800">
+        <div className="bg-white dark:bg-[#1d1b18] rounded-3xl p-5 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-slate-100 dark:border-slate-800">
           <div className="space-y-3 mb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

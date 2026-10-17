@@ -34,7 +34,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     document.documentElement.classList.toggle('dark', dark);
     // Keep the browser UI (status bar / address bar) color in sync too
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', dark ? '#07090E' : '#FFFFFF');
+    if (meta) meta.setAttribute('content', dark ? '#121110' : '#f2ede3');
     setIsDark(dark);
   }, []);
 

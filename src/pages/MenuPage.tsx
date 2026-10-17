@@ -1,205 +1,328 @@
-import React, { useState } from 'react';
-import { Utensils, Bell, RefreshCw, ArrowRight, Calendar } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import { DateSelector } from '../components/DateSelector';
 import { CalendarModal } from '../components/CalendarModal';
-import { MealCard } from '../components/MealCard';
 import { MealDetailModal } from '../components/MealDetailModal';
 import { NoticeModal } from '../components/NoticeModal';
 import { NotificationPromptBanner } from '../components/NotificationPromptBanner';
-import { CuMealsLogo } from '../components/CuMealsLogo';
+import { BlockToggle } from '../components/bento/BlockToggle';
+import { Icon } from '../components/bento/Icon';
+import { showToast } from '../utils/toast';
 import { useMenu, useMessConfig } from '../hooks/useMenu';
-import { MealType } from '../types';
+import { DailyMenu, MealData } from '../types';
 import { auth } from '../firebase/config';
-import { getTodayString, getFormattedDateLong, getRelativeDayLabel } from '../utils/dateUtils';
+import { submitFeedback } from '../firebase/firestore';
+import { addDays, getTodayString } from '../utils/dateUtils';
+import { iconsForItems } from '../utils/foodIcons';
+import {
+  DASH_MEALS, DashMeal, MealWindow, formatClock, formatDuration, getNowInfo, mealState,
+  menuKeyFor, parseMealWindow, timingFor
+} from '../utils/mealTime';
+import { useNow, useSnackBlock } from '../utils/prefs';
+import { haptics } from '../utils/haptics';
 
 interface MenuPageProps {
   selectedDate: string;
   onSelectDate: (date: string) => void;
 }
 
+const META: Record<DashMeal, { title: string; emoji: string }> = {
+  breakfast: { title: 'Breakfast', emoji: '🥞' },
+  lunch: { title: 'Lunch', emoji: '🍛' },
+  snacks: { title: 'Snacks', emoji: '☕' },
+  dinner: { title: 'Dinner', emoji: '🍽️' }
+};
+
+const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const REACTIONS: [string, string][] = [['😋', 'Loved it'], ['🙂', 'Okay'], ['😕', 'Not good']];
+
+function parseDate(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+}
+
+function greeting(h: number): string {
+  return h < 5 ? 'Late night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 21 ? 'Good evening' : 'Good night';
+}
+
+function hasAnyMenu(menu: DailyMenu | null): boolean {
+  return !!menu && (['breakfast', 'lunch', 'snacksBoys', 'snacksGirls', 'dinner'] as const).some((k) => menu[k]?.items?.length);
+}
+
 export const MenuPage: React.FC<MenuPageProps> = ({ selectedDate, onSelectDate }) => {
-  const { menu, loading, error, refresh } = useMenu(selectedDate);
-  const { notices, timings } = useMessConfig();
-
-  const [activeMealType, setActiveMealType] = useState<MealType | null>(null);
-  const [isNoticeOpen, setIsNoticeOpen] = useState<boolean>(false);
-  const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
-
-  const mealConfigs: { id: MealType; title: string; timeKey: keyof typeof timings }[] = [
-    { id: 'breakfast', title: 'Breakfast', timeKey: 'breakfast' },
-    { id: 'lunch', title: 'Lunch', timeKey: 'lunch' },
-    { id: 'snacksBoys', title: 'Snacks (Boys)', timeKey: 'snacksBoys' },
-    { id: 'snacksGirls', title: 'Snacks (Girls)', timeKey: 'snacksGirls' },
-    { id: 'dinner', title: 'Dinner', timeKey: 'dinner' }
-  ];
-
   const todayStr = getTodayString();
+  const tomorrowStr = addDays(todayStr, 1);
+  const { menu, loading, error, refresh } = useMenu(selectedDate);
+  const { menu: tomorrowMenu } = useMenu(tomorrowStr);
+  const { notices, timings } = useMessConfig();
+  const [block, setBlock] = useSnackBlock();
+  const now = useNow(30000);
+
+  const [openMeal, setOpenMeal] = useState<DashMeal | null>(null);
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  const [calOpen, setCalOpen] = useState(false);
+  const [rated, setRated] = useState<Record<string, string>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('cumeals_ratings') || '{}');
+    } catch {
+      return {};
+    }
+  });
+
   const isToday = selectedDate === todayStr;
-  const relativeDayText = getRelativeDayLabel(selectedDate);
-  const formattedDateLong = getFormattedDateLong(selectedDate);
+  const activeNotices = (notices || []).filter((n) => n.active !== false);
+  const d = parseDate(selectedDate);
 
-  return (
-    <div className="pb-32 animate-fadeIn">
-      {/* Top Header */}
-      <div className="flex items-center justify-between mb-5 pt-2">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <CuMealsLogo size="sm" rounded="rounded-xl" />
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-              CuMeals
-            </h1>
+  /** Menu data + admin timing for one meal on one day. */
+  const mealOn = (m: DailyMenu | null, meal: DashMeal): MealData => {
+    const base = (m && m[menuKeyFor(meal, block)]) || { time: '', items: [] };
+    return { ...base, time: timingFor(timings, meal, block) || base.time || '' };
+  };
+
+  const windows = useMemo(() => {
+    const w: Partial<Record<DashMeal, MealWindow | null>> = {};
+    DASH_MEALS.forEach((m) => {
+      w[m] = parseMealWindow(timingFor(timings, m, block) || (menu && menu[menuKeyFor(m, block)]?.time));
+    });
+    return w;
+  }, [timings, block, menu]);
+
+  const nowInfo = isToday ? getNowInfo(windows, now) : null;
+  const dayTotal = DASH_MEALS.reduce((n, m) => n + mealOn(menu, m).items.length, 0);
+
+  // Which meal the rating tile is about: latest meal that is live/finished today
+  const rateMeal: DashMeal | null = isToday
+    ? ([...DASH_MEALS].reverse().find((m) => ['live', 'done'].includes(mealState(windows[m] || null, selectedDate, now))) || null)
+    : null;
+  const rateKey = rateMeal ? `${rateMeal}-${selectedDate}` : '';
+
+  const rate = async (label: string) => {
+    if (!rateMeal) return;
+    haptics.fire('success');
+    const next = { ...rated, [rateKey]: label };
+    setRated(next);
+    try {
+      localStorage.setItem('cumeals_ratings', JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+    const user = auth.currentUser;
+    try {
+      await submitFeedback({
+        message: `Meal rating — ${META[rateMeal].title} (${selectedDate}): ${label}`,
+        userName: user?.displayName || user?.email?.split('@')[0] || 'Hostel Student',
+        userEmail: user?.email || undefined,
+        category: 'food'
+      });
+    } catch {
+      /* local copy is kept anyway */
+    }
+    showToast('Thanks for the feedback!');
+  };
+
+  // ---------- hero ("Serving now" / "Up next" / "Tomorrow" / day summary) ----------
+  const renderHero = () => {
+    let tag = '';
+    let big = '';
+    let sub = '';
+    let emoji = '🍴';
+    let items: { name: string; icon: string }[] = [];
+    let progress = 0;
+    let live = false;
+    let target: DashMeal | null = null;
+
+    if (isToday && nowInfo) {
+      target = nowInfo.meal;
+      emoji = META[nowInfo.meal].emoji;
+      big = formatDuration(nowInfo.minutes);
+      if (nowInfo.kind === 'live') {
+        live = true;
+        tag = 'Serving now';
+        sub = `left in ${META[nowInfo.meal].title} · ends ${formatClock(nowInfo.window.end)}`;
+        progress = nowInfo.progress;
+      } else if (nowInfo.kind === 'next') {
+        tag = 'Up next';
+        sub = `until ${META[nowInfo.meal].title} · starts ${formatClock(nowInfo.window.start)}`;
+      } else {
+        tag = 'Up next · Tomorrow';
+        sub = `until ${META[nowInfo.meal].title} · starts ${formatClock(nowInfo.window.start)}`;
+      }
+      const src = nowInfo.kind === 'tomorrow' ? tomorrowMenu : menu;
+      const md = mealOn(src, nowInfo.meal);
+      items = iconsForItems(md.items, md.icons);
+    } else if (isToday) {
+      tag = 'Today';
+      big = String(dayTotal);
+      sub = 'dishes on the menu';
+    } else {
+      tag = selectedDate === tomorrowStr ? 'Tomorrow' : selectedDate < todayStr ? 'Past menu' : 'Upcoming';
+      big = String(dayTotal);
+      sub = dayTotal === 1 ? 'dish on the menu' : 'dishes on the menu';
+      emoji = '📅';
+    }
+
+    return (
+      <div
+        className={`b-tile b-now ${live ? 'live' : ''}`}
+        role={target ? 'button' : undefined}
+        tabIndex={target ? 0 : undefined}
+        onClick={() => target && (haptics.fire('light'), setOpenMeal(target))}
+        onKeyDown={(e) => target && (e.key === 'Enter' || e.key === ' ') && setOpenMeal(target)}
+        aria-label={`${tag} ${big} ${sub}`}
+      >
+        <div className="b-now-top">
+          <span className="b-tag">{live && <i />}{tag}</span>
+          <span className="b-emoji-now">{emoji}</span>
+        </div>
+        <div className="b-big">{big}</div>
+        <div className="b-sub">{sub}</div>
+        {live && (
+          <div className="b-prog"><i style={{ width: `${Math.round(progress * 100)}%` }} /></div>
+        )}
+        {items.length > 0 && (
+          <div className="b-now-items">
+            {items.slice(0, 5).map((it, i) => (
+              <span key={i}>{it.icon} {it.name}</span>
+            ))}
+            {items.length > 5 && <span>+{items.length - 5}</span>}
           </div>
-          <p className="text-xs text-slate-400 font-medium mt-1">
-            Good food, good mood.
-          </p>
-        </div>
-
-        {/* Notice Bell Button */}
-        <button
-          onClick={() => setIsNoticeOpen(true)}
-          className="relative w-11 h-11 rounded-full bg-white dark:bg-[#131722] flex items-center justify-center text-slate-700 dark:text-slate-200 hover:scale-105 active:scale-95 transition-all border border-slate-100 dark:border-slate-800"
-          aria-label="Notice Board"
-        >
-          <Bell size={20} strokeWidth={2.2} />
-          {notices.length > 0 && (
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-[#131722] animate-pulse" />
-          )}
-        </button>
-      </div>
-
-      {/* Push Notification Enable Banner */}
-      <NotificationPromptBanner currentUser={auth.currentUser} />
-
-      {/* Date Selector with Surrounding Dates + Calendar Trigger */}
-      <DateSelector
-        selectedDate={selectedDate}
-        onSelectDate={onSelectDate}
-        onOpenCalendar={() => setIsCalendarOpen(true)}
-      />
-
-      {/* Date Title Banner */}
-      <div className="flex items-center justify-between mb-4 px-1">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            {relativeDayText} • {formattedDateLong}
-          </span>
-          {isToday && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30">
-              Today
-            </span>
-          )}
-        </div>
-
-        {!isToday && (
-          <button
-            onClick={() => onSelectDate(todayStr)}
-            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-          >
-            Go to Today
-          </button>
         )}
       </div>
+    );
+  };
 
-      {/* Loading Skeleton */}
-      {loading ? (
-        <div className="space-y-3.5">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div
-              key={i}
-              className="h-28 rounded-[28px] bg-slate-900/60 border border-slate-800 animate-pulse"
-            />
-          ))}
+  // ---------- one full-width tile per meal ----------
+  const renderMeal = (meal: DashMeal) => {
+    const md = mealOn(menu, meal);
+    const st = mealState(windows[meal] || null, selectedDate, now);
+    const list = iconsForItems(md.items, md.icons);
+    const max = 7;
+    return (
+      <div
+        key={meal}
+        className={`b-tile b-meal t-${meal} ${st === 'live' ? 'live' : st === 'done' ? 'done' : ''}`}
+        role="button"
+        tabIndex={0}
+        onClick={() => (haptics.fire('light'), setOpenMeal(meal))}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setOpenMeal(meal))}
+        aria-label={`${META[meal].title} details`}
+      >
+        <div className="b-meal-top">
+          <div>
+            <div className="b-meal-title">
+              <h3>{META[meal].title}</h3>
+              {st === 'live' && <span className="pill live"><i />Now</span>}
+              {st === 'done' && <span className="b-check"><Icon name="check" size={14} sw={3} /></span>}
+            </div>
+            <div className="b-meal-sub">{md.time || 'Timing not set'}</div>
+          </div>
+          <span className="b-emoji" aria-hidden="true">{META[meal].emoji}</span>
         </div>
-      ) : error ? (
-        <div className="p-6 text-center rounded-[28px] bg-slate-900/80 border border-slate-800 my-4 shadow-sm">
-          <p className="text-xs font-semibold text-rose-400 mb-2">{error}</p>
+        {list.length ? (
+          <div className="b-dishes">
+            {list.slice(0, max).map((it, i) => (
+              <span key={i} className="b-dish"><em>{it.icon}</em>{it.name}</span>
+            ))}
+            {list.length > max && <span className="b-dish more">+{list.length - max} more</span>}
+          </div>
+        ) : (
+          <div className="b-empty">Menu not posted yet</div>
+        )}
+        {meal === 'snacks' && (
+          <div className="b-snack"><BlockToggle value={block} onChange={setBlock} /></div>
+        )}
+      </div>
+    );
+  };
+
+  const openData = openMeal ? mealOn(menu, openMeal) : undefined;
+
+  return (
+    <div>
+      <header className="b-head">
+        <div>
+          <p className="b-greet">{greeting(now.getHours())} · <b>CuMeals</b></p>
+          <h1><span>{DOW[d.getDay()]},</span> {d.getDate()} {MON[d.getMonth()]}</h1>
+        </div>
+        <div className="b-actions">
           <button
-            onClick={refresh}
-            className="px-4 py-2 rounded-full bg-indigo-600 text-white text-xs font-semibold flex items-center gap-1.5 mx-auto active:scale-95"
+            type="button"
+            className="icon-btn"
+            aria-label="Notice board"
+            onClick={() => (haptics.fire('light'), setNoticeOpen(true))}
           >
-            <RefreshCw size={14} />
-            <span>Retry</span>
+            <Icon name="bell" size={20} sw={2} />
+            {activeNotices.length > 0 && <span className="dot" />}
           </button>
         </div>
-      ) : menu && (menu.breakfast?.items?.length || menu.lunch?.items?.length || menu.snacksBoys?.items?.length || menu.snacksGirls?.items?.length || menu.dinner?.items?.length) ? (
-        /* Meal Cards List */
-        <div className="space-y-1">
-          {mealConfigs.map((cfg) => {
-            // Inherit global timing from timings section
-            const globalTime = (timings && (timings as any)[cfg.timeKey]) || '';
-            const mealData = menu[cfg.id] || {
-              time: globalTime,
-              items: []
-            };
-            const displayData = {
-              ...mealData,
-              time: globalTime || mealData.time || ''
-            };
+      </header>
 
-            return (
-              <MealCard
-                key={cfg.id}
-                type={cfg.id}
-                title={cfg.title}
-                data={displayData}
-                selectedDate={selectedDate}
-                onClick={() => setActiveMealType(cfg.id)}
-              />
-            );
-          })}
-        </div>
-      ) : (
-        /* Empty / Not Available State */
-        <div className="p-7 text-center rounded-[32px] bg-white dark:bg-slate-900/90 border border-slate-100 dark:border-slate-800 shadow-xl my-4 animate-fadeIn">
-          <div className="w-16 h-16 rounded-3xl bg-indigo-500/10 text-indigo-400 mx-auto flex items-center justify-center mb-4 border border-indigo-500/20 shadow-inner">
-            <Utensils size={28} className="text-indigo-400" />
-          </div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1.5">
-            Menu will be updated soon
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto mb-6 leading-relaxed font-medium">
-            The menu for {formattedDateLong} has not been posted by the mess committee yet. Please check back later.
-          </p>
+      <NotificationPromptBanner currentUser={auth.currentUser} />
 
-          <div className="flex items-center justify-center">
-            <button
-              onClick={() => onSelectDate(todayStr)}
-              className="px-5 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold inline-flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 active:scale-95 transition-all"
-            >
-              <span>Back to Today's Menu</span>
-              <ArrowRight size={14} />
-            </button>
-          </div>
+      <DateSelector selectedDate={selectedDate} onSelectDate={onSelectDate} onOpenCalendar={() => setCalOpen(true)} />
+
+      {!isToday && (
+        <div className="b-datebar">
+          <span>{selectedDate < todayStr ? 'Past menu' : 'Upcoming menu'}</span>
+          <button type="button" onClick={() => onSelectDate(todayStr)}>Back to today</button>
         </div>
       )}
 
-      {/* Modals */}
-      {activeMealType && menu && (
+      {loading ? (
+        <div className="b-grid">
+          {[1, 2, 3, 4].map((i) => <div key={i} className="skeleton" />)}
+        </div>
+      ) : error ? (
+        <div className="cm-card" style={{ textAlign: 'center' }}>
+          <p style={{ color: '#FF3B30', fontWeight: 650, fontSize: 13, marginBottom: 12 }}>{error}</p>
+          <button type="button" className="btn primary" onClick={refresh}>Retry</button>
+        </div>
+      ) : !hasAnyMenu(menu) ? (
+        <div className="cm-card" style={{ textAlign: 'center', padding: 28 }}>
+          <div style={{ fontSize: 46, marginBottom: 8 }}>🍽️</div>
+          <h3 style={{ fontSize: 19, fontWeight: 750, marginBottom: 6 }}>Menu will be updated soon</h3>
+          <p style={{ fontSize: 13, color: 'var(--fg2)', lineHeight: 1.5, marginBottom: 18 }}>
+            The menu for this day hasn't been posted by the mess committee yet. Please check back later.
+          </p>
+          {!isToday && (
+            <button type="button" className="btn primary" onClick={() => onSelectDate(todayStr)}>Back to today's menu</button>
+          )}
+        </div>
+      ) : (
+        <div className="b-grid">
+          {renderHero()}
+          {DASH_MEALS.map(renderMeal)}
+          {rateMeal && (
+            <div className="b-tile b-rate">
+              <h3>How was {META[rateMeal].title.toLowerCase()}?</h3>
+              <p>Your rating goes straight to the mess committee</p>
+              <div className="react">
+                {REACTIONS.map(([e, l]) => (
+                  <button key={l} type="button" className={rated[rateKey] === l ? 'on' : ''} onClick={() => rate(l)}>
+                    <span>{e}</span>{l}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {openMeal && (
         <MealDetailModal
-          isOpen={!!activeMealType}
-          onClose={() => setActiveMealType(null)}
-          type={activeMealType}
-          title={mealConfigs.find(c => c.id === activeMealType)?.title || activeMealType}
-          data={{
-            ...menu[activeMealType],
-            time: (timings && (timings as any)[mealConfigs.find(c => c.id === activeMealType)?.timeKey || '']) || menu[activeMealType]?.time || ''
-          }}
+          isOpen
+          onClose={() => setOpenMeal(null)}
+          type={menuKeyFor(openMeal, block)}
+          title={META[openMeal].title}
+          emoji={META[openMeal].emoji}
+          data={openData}
           selectedDate={selectedDate}
+          blockToggle={openMeal === 'snacks' ? <BlockToggle value={block} onChange={setBlock} /> : undefined}
         />
       )}
 
-      <NoticeModal
-        isOpen={isNoticeOpen}
-        onClose={() => setIsNoticeOpen(false)}
-        notices={notices}
-      />
-
-      <CalendarModal
-        isOpen={isCalendarOpen}
-        onClose={() => setIsCalendarOpen(false)}
-        selectedDate={selectedDate}
-        onSelectDate={onSelectDate}
-      />
+      <NoticeModal isOpen={noticeOpen} onClose={() => setNoticeOpen(false)} notices={notices} />
+      <CalendarModal isOpen={calOpen} onClose={() => setCalOpen(false)} selectedDate={selectedDate} onSelectDate={onSelectDate} />
     </div>
   );
 };

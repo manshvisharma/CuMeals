@@ -3,6 +3,7 @@ import { Plus, Trash2, Copy, Save, Check, Calendar, ChevronLeft, ChevronRight, C
 import { DailyMenu, MealType, MealTimings } from '../../types';
 import { fetchMenuForDate, saveMenuForDate, fetchTimings } from '../../firebase/firestore';
 import { getTodayString, addDays, getFormattedDateLong, getFullDayName } from '../../utils/dateUtils';
+import { guessFoodIcon, normalizeIcon } from '../../utils/foodIcons';
 
 export const MenuManager: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(getTodayString());
@@ -69,14 +70,35 @@ export const MenuManager: React.FC = () => {
   const handleItemChange = (type: MealType, index: number, value: string) => {
     if (!menuData) return;
     const currentItems = menuData[type]?.items || [];
+    const oldName = currentItems[index] || '';
     const newItems = [...currentItems];
     newItems[index] = value;
+    // keep a custom icon attached to the dish when its name is edited
+    const icons = (menuData[type]?.icons || []).map((ic) =>
+      ic.name.trim().toLowerCase() === oldName.trim().toLowerCase() && oldName ? { ...ic, name: value } : ic
+    );
     setMenuData({
       ...menuData,
       [type]: {
         ...menuData[type],
-        items: newItems
+        items: newItems,
+        icons
       }
+    });
+  };
+
+  // Set / clear the custom emoji of one dish (empty box = automatic icon)
+  const handleIconChange = (type: MealType, index: number, raw: string) => {
+    if (!menuData) return;
+    const name = (menuData[type]?.items || [])[index] || '';
+    if (!name.trim()) return;
+    const key = name.trim().toLowerCase();
+    const rest = (menuData[type]?.icons || []).filter((ic) => ic.name.trim().toLowerCase() !== key);
+    const clean = raw.trim() ? normalizeIcon(raw) : null;
+    if (raw.trim() && !clean) return; // not an emoji: ignore the keystroke
+    setMenuData({
+      ...menuData,
+      [type]: { ...menuData[type], icons: clean ? [...rest, { name, icon: clean }] : rest }
     });
   };
 
@@ -122,29 +144,40 @@ export const MenuManager: React.FC = () => {
     if (!menuData) return;
     setSaving(true);
 
+    // only keep custom icons for dishes that are still on the menu
+    const keepIcons = (m?: { items?: string[]; icons?: { name: string; icon: string }[] }) => {
+      const names = new Set((m?.items || []).map((i) => i.trim().toLowerCase()).filter(Boolean));
+      return (m?.icons || []).filter((ic) => names.has(ic.name.trim().toLowerCase()));
+    };
+
     // Clean empty item lines before saving
     const cleanedMenu: DailyMenu = {
       ...menuData,
       date: selectedDate,
       breakfast: {
         time: globalTimings?.breakfast || menuData.breakfast?.time || '',
-        items: (menuData.breakfast?.items || []).filter(i => i.trim().length > 0)
+        items: (menuData.breakfast?.items || []).filter(i => i.trim().length > 0),
+        icons: keepIcons(menuData.breakfast)
       },
       lunch: {
         time: globalTimings?.lunch || menuData.lunch?.time || '',
-        items: (menuData.lunch?.items || []).filter(i => i.trim().length > 0)
+        items: (menuData.lunch?.items || []).filter(i => i.trim().length > 0),
+        icons: keepIcons(menuData.lunch)
       },
       snacksBoys: {
         time: globalTimings?.snacksBoys || menuData.snacksBoys?.time || '',
-        items: (menuData.snacksBoys?.items || []).filter(i => i.trim().length > 0)
+        items: (menuData.snacksBoys?.items || []).filter(i => i.trim().length > 0),
+        icons: keepIcons(menuData.snacksBoys)
       },
       snacksGirls: {
         time: globalTimings?.snacksGirls || menuData.snacksGirls?.time || '',
-        items: (menuData.snacksGirls?.items || []).filter(i => i.trim().length > 0)
+        items: (menuData.snacksGirls?.items || []).filter(i => i.trim().length > 0),
+        icons: keepIcons(menuData.snacksGirls)
       },
       dinner: {
         time: globalTimings?.dinner || menuData.dinner?.time || '',
-        items: (menuData.dinner?.items || []).filter(i => i.trim().length > 0)
+        items: (menuData.dinner?.items || []).filter(i => i.trim().length > 0),
+        icons: keepIcons(menuData.dinner)
       }
     };
 
@@ -248,7 +281,7 @@ export const MenuManager: React.FC = () => {
               Editing Menu for: <span className="text-indigo-400 font-extrabold">{dayName} ({formattedLong})</span>
             </h2>
             <span className="text-xs text-slate-400 hidden md:inline">
-              Add food items per meal. Timings are managed in the Timings tab.
+              Add dishes per meal. The small box before each dish is its emoji (leave empty for an automatic one). Timings are managed in the Timings tab.
             </span>
           </div>
 
@@ -293,10 +326,20 @@ export const MenuManager: React.FC = () => {
                             </span>
                             <input
                               type="text"
+                              inputMode="text"
+                              aria-label="Dish emoji"
+                              title="Emoji for this dish (leave empty for automatic)"
+                              value={(meal.icons || []).find((ic) => ic.name.trim().toLowerCase() === item.trim().toLowerCase())?.icon || ''}
+                              placeholder={item.trim() ? guessFoodIcon(item) : '🍽️'}
+                              onChange={(e) => handleIconChange(m.id, idx, e.target.value)}
+                              className="w-11 shrink-0 text-center px-1 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-base outline-none focus:ring-2 focus:ring-indigo-500 placeholder:opacity-60"
+                            />
+                            <input
+                              type="text"
                               value={item}
                               placeholder="e.g. Paneer Butter Masala, Roti, Salad"
                               onChange={(e) => handleItemChange(m.id, idx, e.target.value)}
-                              className="flex-1 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-xs font-medium text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-600"
+                              className="flex-1 min-w-0 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-xs font-medium text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-600"
                             />
                             <button
                               onClick={() => handleRemoveItem(m.id, idx)}

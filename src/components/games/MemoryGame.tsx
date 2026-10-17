@@ -186,7 +186,7 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({ playerName, userEmail, o
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={onBack}
-          className="p-2.5 rounded-2xl bg-white dark:bg-[#131722] text-slate-700 dark:text-slate-200 shadow-sm active:scale-95 transition-all flex items-center gap-1.5 text-xs font-bold"
+          className="p-2.5 rounded-2xl bg-white dark:bg-[#1d1b18] text-slate-700 dark:text-slate-200 shadow-sm active:scale-95 transition-all flex items-center gap-1.5 text-xs font-bold"
         >
           <ArrowLeft size={16} />
           <span>Exit</span>
@@ -200,7 +200,7 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({ playerName, userEmail, o
 
         <button
           onClick={() => initGame()}
-          className="p-2.5 rounded-2xl bg-white dark:bg-[#131722] text-slate-700 dark:text-slate-200 shadow-sm active:scale-95 transition-all"
+          className="p-2.5 rounded-2xl bg-white dark:bg-[#1d1b18] text-slate-700 dark:text-slate-200 shadow-sm active:scale-95 transition-all"
           title="Restart Game"
         >
           <RefreshCw size={16} />
@@ -209,17 +209,17 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({ playerName, userEmail, o
 
       {/* Stats Header Box */}
       <div className="grid grid-cols-4 gap-2.5 mb-4 text-center">
-        <div className="p-3 rounded-2xl bg-white dark:bg-[#131722] shadow-[0_4px_16px_rgba(0,0,0,0.02)] border border-slate-100 dark:border-slate-800">
+        <div className="p-3 rounded-2xl bg-white dark:bg-[#1d1b18] shadow-[0_4px_16px_rgba(0,0,0,0.02)] border border-slate-100 dark:border-slate-800">
           <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Moves</span>
           <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white">{moves}</span>
         </div>
-        <div className="p-3 rounded-2xl bg-white dark:bg-[#131722] shadow-[0_4px_16px_rgba(0,0,0,0.02)] border border-slate-100 dark:border-slate-800">
+        <div className="p-3 rounded-2xl bg-white dark:bg-[#1d1b18] shadow-[0_4px_16px_rgba(0,0,0,0.02)] border border-slate-100 dark:border-slate-800">
           <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pairs</span>
           <span className="text-base sm:text-lg font-black text-indigo-600 dark:text-indigo-400">
             {matchedPairs} <span className="text-xs text-slate-400">/ {totalPairs}</span>
           </span>
         </div>
-        <div className="p-3 rounded-2xl bg-white dark:bg-[#131722] shadow-[0_4px_16px_rgba(0,0,0,0.02)] border border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center">
+        <div className="p-3 rounded-2xl bg-white dark:bg-[#1d1b18] shadow-[0_4px_16px_rgba(0,0,0,0.02)] border border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center">
           <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1 justify-center w-full">
             <Clock size={10} /> Time
           </span>
@@ -227,7 +227,7 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({ playerName, userEmail, o
             {formatTime(timeTaken)}
           </span>
         </div>
-        <div className="p-3 rounded-2xl bg-white dark:bg-[#131722] shadow-[0_4px_16px_rgba(0,0,0,0.02)] border border-slate-100 dark:border-slate-800">
+        <div className="p-3 rounded-2xl bg-white dark:bg-[#1d1b18] shadow-[0_4px_16px_rgba(0,0,0,0.02)] border border-slate-100 dark:border-slate-800">
           <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Best</span>
           <span className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400">
             {bestScore ? `${bestScore}m` : '—'}
@@ -266,7 +266,7 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({ playerName, userEmail, o
 
       {/* Victory Celebration Modal / Banner */}
       {gameWon && (
-        <div className="p-6 rounded-[28px] bg-white dark:bg-[#131722] shadow-2xl text-center border border-indigo-100 dark:border-indigo-900/40 animate-scaleUp max-w-sm mx-auto">
+        <div className="p-6 rounded-[28px] bg-white dark:bg-[#1d1b18] shadow-2xl text-center border border-indigo-100 dark:border-indigo-900/40 animate-scaleUp max-w-sm mx-auto">
           <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center mb-3 shadow-inner">
             <Trophy size={28} />
           </div>

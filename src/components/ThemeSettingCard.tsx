@@ -1,32 +1,35 @@
 import React from 'react';
-import { Smartphone, Sun, Moon } from 'lucide-react';
 import { useTheme, ThemePreference } from '../context/ThemeContext';
+import { Icon } from './bento/Icon';
+import { haptics } from '../utils/haptics';
 
-const OPTIONS: { value: ThemePreference; label: string; icon: React.ReactNode }[] = [
-  { value: 'device', label: 'Device', icon: <Smartphone size={16} /> },
-  { value: 'light', label: 'Light', icon: <Sun size={16} /> },
-  { value: 'dark', label: 'Dark', icon: <Moon size={16} /> },
+const OPTIONS: { value: ThemePreference; label: string }[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'device', label: 'Auto' }
 ];
 
 export const ThemeSettingCard: React.FC = () => {
   const { themePreference, setThemePreference } = useTheme();
-
   return (
-    <div className="p-3.5 rounded-[22px] bg-white/70 dark:bg-slate-800/60 border border-white/80 dark:border-slate-800 shadow-sm">
-      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">Appearance</p>
-      <div className="grid grid-cols-3 gap-2">
-        {OPTIONS.map((opt) => (
+    <div className="row col">
+      <div className="row-line">
+        <span className="row-ico"><Icon name="sun" size={20} /></span>
+        <span className="grow"><h3>Appearance</h3></span>
+      </div>
+      <div className="seg-ctl wide">
+        {OPTIONS.map((o) => (
           <button
-            key={opt.value}
-            onClick={() => setThemePreference(opt.value)}
-            className={`flex flex-col items-center gap-1 py-2.5 rounded-2xl text-xs font-medium transition-colors ${
-              themePreference === opt.value
-                ? 'bg-indigo-600 text-white'
-                : 'bg-slate-100 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400'
-            }`}
+            key={o.value}
+            type="button"
+            className={themePreference === o.value ? 'on' : ''}
+            aria-pressed={themePreference === o.value}
+            onClick={() => {
+              haptics.fire('select');
+              setThemePreference(o.value);
+            }}
           >
-            {opt.icon}
-            {opt.label}
+            {o.label}
           </button>
         ))}
       </div>

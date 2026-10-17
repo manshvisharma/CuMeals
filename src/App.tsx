@@ -5,8 +5,8 @@ import { TimepassPage } from './pages/TimepassPage';
 import { MorePage } from './pages/MorePage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminLogin } from './pages/admin/AdminLogin';
-import { BottomNav } from './components/BottomNav';
-import { SwipeableViews } from './components/SwipeableViews';
+import { GlassNav } from './components/GlassNav';
+import { Toast } from './components/bento/Toast';
 import { MandatoryAuthScreen } from './components/MandatoryAuthScreen';
 import { GlobalMultiplayer } from './components/GlobalMultiplayer';
 import { ActiveTab } from './types';
@@ -25,8 +25,13 @@ export default function App() {
     return localStorage.getItem('mess_admin_session') === 'true';
   });
 
+  const changeTab = (tab: ActiveTab) => {
+    setActiveTab(tab);
+    window.scrollTo({ top: 0 });
+  };
+
   useEffect(() => {
-    const handleNav = (e: any) => setActiveTab(e.detail);
+    const handleNav = (e: any) => changeTab(e.detail);
     window.addEventListener('navigate-tab', handleNav);
     return () => window.removeEventListener('navigate-tab', handleNav);
   }, []);
@@ -65,25 +70,22 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  const pageCls = (tab: ActiveTab) => `cm-page p-${tab}`;
+
   return (
-    <div className="min-h-screen flex justify-center items-start sm:py-6 sm:px-4 bg-slate-50 dark:bg-[#07090E] text-slate-900 dark:text-slate-100">
+    <div className="cm-root">
       {/* Mandatory Auth Lock Screen if not signed in */}
       {authInitialized && !user && !isAdminView && (
         <MandatoryAuthScreen onSuccess={() => {}} />
       )}
 
-      {/* Responsive Container - Wide Desktop/Laptop for Admin, Compact Mobile for Student App */}
-      <div className={`w-full ${
-        isAdminView
-          ? 'max-w-6xl min-h-screen sm:min-h-[880px] sm:rounded-[32px] px-4 sm:px-8 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-12'
-          : 'max-w-md min-h-screen sm:min-h-[844px] sm:max-h-[92vh] sm:rounded-[40px] px-5 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-28 sm:pb-28'
-      } bg-white dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 sm:border sm:border-slate-100 dark:sm:border-slate-800/80 sm:shadow-2xl relative flex flex-col justify-between overflow-y-auto no-scrollbar transition-all duration-300`}>
-        
-        <GlobalMultiplayer currentUser={user} onNavigateToGame={() => {}} />
-      {/* Main Application Body */}
-        <main className="flex-1 w-full overflow-hidden">
-          {isAdminView ? (
-            isAdminLoggedIn ? (
+      <GlobalMultiplayer currentUser={user} onNavigateToGame={() => {}} />
+
+      {isAdminView ? (
+        /* Admin portal keeps its own dark control-panel look */
+        <div className="dark relative z-[1] min-h-screen bg-[#0B0F19] text-slate-100 px-4 sm:px-8 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-12">
+          <div className="mx-auto max-w-6xl">
+            {isAdminLoggedIn ? (
               <AdminDashboard
                 onLogout={() => {
                   localStorage.removeItem('mess_admin_session');
@@ -99,40 +101,32 @@ export default function App() {
                 }}
                 onBackToApp={() => setIsAdminView(false)}
               />
-            )
-          ) : (
-            <SwipeableViews
-              activeTab={activeTab}
-              onChangeTab={setActiveTab}
-            >
-              {{
-                menu: (
-                  <MenuPage
-                    selectedDate={selectedDate}
-                    onSelectDate={setSelectedDate}
-                  />
-                ),
-                timings: <TimingsPage />,
-                timepass: <TimepassPage currentUser={user} />,
-                more: (
-                  <MorePage
-                    onOpenAdmin={() => setIsAdminView(true)}
-                  />
-                )
-              }}
-            </SwipeableViews>
-          )}
-        </main>
-
-        {/* Floating Bottom Navigation Bar (Hidden when in Admin Portal) */}
-        {!isAdminView && (
-          <BottomNav
-            activeTab={activeTab}
-            onChangeTab={setActiveTab}
-          />
-        )}
-
-      </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="cm-dots" aria-hidden="true" />
+          <main className="cm-view">
+            {/* All pages stay mounted (state & games are kept); only the active one is visible.
+                Switching pages happens ONLY through the navigation bar – no swiping. */}
+            <section className={`${pageCls('menu')} ${activeTab === 'menu' ? 'enter' : ''}`} hidden={activeTab !== 'menu'}>
+              <MenuPage selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+            </section>
+            <section className={`${pageCls('timings')} ${activeTab === 'timings' ? 'enter' : ''}`} hidden={activeTab !== 'timings'}>
+              <TimingsPage />
+            </section>
+            <section className={`${pageCls('timepass')} ${activeTab === 'timepass' ? 'enter' : ''}`} hidden={activeTab !== 'timepass'}>
+              <TimepassPage currentUser={user} />
+            </section>
+            <section className={`${pageCls('more')} ${activeTab === 'more' ? 'enter' : ''}`} hidden={activeTab !== 'more'}>
+              <MorePage onOpenAdmin={() => setIsAdminView(true)} />
+            </section>
+          </main>
+          <GlassNav activeTab={activeTab} onChangeTab={changeTab} />
+          <Toast />
+        </>
+      )}
     </div>
   );
 }

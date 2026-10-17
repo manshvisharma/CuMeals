@@ -1,377 +1,200 @@
-import React, { useState, useEffect } from 'react';
-import {
-  MoreHorizontal,
-  Bell,
-  Info,
-  MessageSquare,
-  Share2,
-  Lock,
-  ChevronRight,
-  User,
-  Heart,
-  LogOut,
-  Edit3
-} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
-import { GlassCard } from '../components/GlassCard';
 import { InstallPrompt } from '../components/InstallPrompt';
 import { NoticeModal } from '../components/NoticeModal';
 import { UserProfileModal } from '../components/UserProfileModal';
-import { ThemeSettingCard } from "../components/ThemeSettingCard";
+import { ThemeSettingCard } from '../components/ThemeSettingCard';
 import { NotificationSettingsCard } from '../components/NotificationSettingsCard';
 import { CuMealsLogo } from '../components/CuMealsLogo';
+import { Icon } from '../components/bento/Icon';
+import { Switch } from '../components/bento/Switch';
+import { Sheet } from '../components/bento/Sheet';
 import { useMessConfig } from '../hooks/useMenu';
 import { subscribeToAuth } from '../firebase/auth';
 import { submitFeedback } from '../firebase/firestore';
 import { isUserAdmin } from '../utils/adminUtils';
+import { haptics } from '../utils/haptics';
+import { showToast } from '../utils/toast';
 
 interface MorePageProps {
   onOpenAdmin: () => void;
 }
 
+type FbCat = 'food' | 'hygiene' | 'timing' | 'general';
+const CATS: { id: FbCat; label: string }[] = [
+  { id: 'food', label: '🍲 Food' },
+  { id: 'hygiene', label: '✨ Hygiene' },
+  { id: 'timing', label: '⏰ Timing' },
+  { id: 'general', label: '💡 General' }
+];
+
 export const MorePage: React.FC<MorePageProps> = ({ onOpenAdmin }) => {
-  const { notices, settings } = useMessConfig();
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const { notices } = useMessConfig();
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [sheet, setSheet] = useState<'about' | 'feedback' | null>(null);
+  const [hapticsOn, setHapticsOn] = useState(haptics.isEnabled());
 
-  const [isNoticeOpen, setIsNoticeOpen] = useState<boolean>(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
-  const [activeModal, setActiveModal] = useState<'about' | 'feedback' | null>(null);
+  const [text, setText] = useState('');
+  const [cat, setCat] = useState<FbCat>('food');
+  const [sending, setSending] = useState(false);
 
-  const [feedbackText, setFeedbackText] = useState('');
-  const [feedbackCategory, setFeedbackCategory] = useState<'food' | 'hygiene' | 'timing' | 'general'>('food');
-  const [feedbackSent, setFeedbackSent] = useState(false);
-  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  useEffect(() => subscribeToAuth(setUser), []);
 
-  useEffect(() => {
-    const unsubscribe = subscribeToAuth((user) => {
-      setCurrentUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
+  const activeNotices = (notices || []).filter((n) => n.active !== false);
+  const admin = isUserAdmin(user?.email);
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: 'Hostel Mess Menu App',
-        text: 'Check out today\'s hostel mess menu on Mess Menu PWA!',
-        url: window.location.href
-      }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
+  const share = async () => {
+    haptics.fire('light');
+    const url = window.location.origin;
+    if (navigator.share) navigator.share({ title: 'CuMeals', text: "Check today's hostel mess menu on CuMeals!", url }).catch(() => {});
+    else {
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast('Link copied');
+      } catch {
+        showToast(url);
+      }
     }
   };
 
-  const handleSendFeedback = async (e: React.FormEvent) => {
+  const send = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!feedbackText.trim()) return;
-
-    setSubmittingFeedback(true);
+    if (!text.trim()) return;
+    setSending(true);
     try {
       await submitFeedback({
-        message: feedbackText.trim(),
-        userName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Hostel Student',
-        userEmail: currentUser?.email || undefined,
-        category: feedbackCategory
+        message: text.trim(),
+        userName: user?.displayName || user?.email?.split('@')[0] || 'Hostel Student',
+        userEmail: user?.email || undefined,
+        category: cat
       });
-      setFeedbackSent(true);
-      setTimeout(() => {
-        setFeedbackSent(false);
-        setFeedbackText('');
-        setActiveModal(null);
-      }, 1500);
-    } catch (err) {
-      console.error(err);
+      haptics.fire('success');
+      showToast('Feedback sent — thank you!');
+      setText('');
+      setSheet(null);
+    } catch {
+      haptics.fire('error');
+      showToast('Could not send. Try again.');
     } finally {
-      setSubmittingFeedback(false);
+      setSending(false);
     }
   };
 
+  const Row: React.FC<{ icon: string; title: string; sub?: string; onClick: () => void; extra?: React.ReactNode }> = ({ icon, title, sub, onClick, extra }) => (
+    <button type="button" className="row tap" onClick={() => (haptics.fire('light'), onClick())}>
+      <span className="row-ico"><Icon name={icon} size={20} /></span>
+      <span className="grow"><h3>{title}</h3>{sub && <p>{sub}</p>}</span>
+      {extra}
+      <Icon name="right" size={18} sw={2} />
+    </button>
+  );
+
+  const initial = user ? (user.displayName || user.email || 'U')[0].toUpperCase() : '';
+
   return (
-    <div className="pb-32 animate-fadeIn pt-2">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <CuMealsLogo size="md" rounded="rounded-[18px]" />
-
+    <div>
+      <header className="page-head">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            CuMeals
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            Good food, good mood.
-          </p>
+          <h1>More</h1>
+          <p>Profile, alerts & feedback</p>
         </div>
-      </div>
+        <CuMealsLogo size="md" />
+      </header>
 
-      {/* User Auth & Profile Banner */}
-      <button
-        onClick={() => setIsProfileModalOpen(true)}
-        className="w-full text-left mb-4 p-4 rounded-[26px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-100/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex items-center justify-between active:scale-98"
-      >
-        <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-base border border-indigo-500/20">
-            {currentUser ? (
-              currentUser.displayName ? currentUser.displayName[0].toUpperCase() : currentUser.email ? currentUser.email[0].toUpperCase() : 'U'
-            ) : (
-              <User size={20} />
-            )}
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              {currentUser ? (currentUser.displayName || 'Student Account') : 'Sign In / Account'}
-            </h3>
-            <p className="text-[11px] text-slate-400 font-medium">
-              {currentUser ? currentUser.email : 'Google & Email Auth • Set Name & Password'}
-            </p>
-          </div>
+      <button type="button" className="cm-card profile tap" onClick={() => (haptics.fire('light'), setProfileOpen(true))}>
+        <div className="avatar">{initial || <Icon name="user" size={24} />}</div>
+        <div className="grow">
+          <h3>{user ? user.displayName || 'Student account' : 'Sign in / Account'}</h3>
+          <p>{user ? user.email : 'Google & email sign-in'}</p>
         </div>
-        <div className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
-          {currentUser ? 'Profile' : 'Sign In'}
-        </div>
+        <Icon name="right" size={18} sw={2} />
       </button>
 
-      {/* PWA Install Prompt */}
       <InstallPrompt />
 
-      {/* Push Notifications Card */}
-      <div className="mb-4">
-        <NotificationSettingsCard currentUser={currentUser} />
-      </div>
+      <div className="group-label">Alerts</div>
+      <NotificationSettingsCard currentUser={user} />
 
-      {/* Glass List Options */}
-      <div className="space-y-2.5">
+      <div className="group-label">General</div>
+      <div className="list">
+        <Row
+          icon="bell"
+          title="Notice board"
+          sub={activeNotices.length ? `${activeNotices.length} from the mess committee` : 'No new announcements'}
+          onClick={() => setNoticeOpen(true)}
+          extra={activeNotices.length ? <span className="badge">{activeNotices.length}</span> : undefined}
+        />
+        <div className="row">
+          <span className="row-ico"><Icon name="vibrate" size={20} /></span>
+          <span className="grow"><h3>Haptic feedback</h3><p>{haptics.isSupported() ? 'Tap feedback on the navigation bar' : 'Not available on this device'}</p></span>
+          <Switch
+            on={hapticsOn}
+            label="Haptic feedback"
+            onChange={(v) => {
+              haptics.setEnabled(v);
+              setHapticsOn(v);
+            }}
+          />
+        </div>
         <ThemeSettingCard />
-        
-        {/* Notice Board */}
-        <button
-          onClick={() => setIsNoticeOpen(true)}
-          className="w-full text-left p-4 rounded-[22px] bg-white/70 dark:bg-slate-800/60 border border-white/80 dark:border-slate-800 shadow-sm hover:bg-white dark:hover:bg-slate-800 transition-all flex items-center justify-between active:scale-98"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
-              <Bell size={18} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Notice Board</p>
-              <p className="text-[11px] text-slate-400">View latest mess announcements</p>
-            </div>
-          </div>
-          <ChevronRight size={18} className="text-slate-400" />
-        </button>
-
-        {/* Feedback */}
-        <button
-          onClick={() => setActiveModal('feedback')}
-          className="w-full text-left p-4 rounded-[22px] bg-white/70 dark:bg-slate-800/60 border border-white/80 dark:border-slate-800 shadow-sm hover:bg-white dark:hover:bg-slate-800 transition-all flex items-center justify-between active:scale-98"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
-              <MessageSquare size={18} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Feedback & Suggestions</p>
-              <p className="text-[11px] text-slate-400">Help us improve mess meals</p>
-            </div>
-          </div>
-          <ChevronRight size={18} className="text-slate-400" />
-        </button>
-
-        {/* About Us */}
-        <button
-          onClick={() => setActiveModal('about')}
-          className="w-full text-left p-4 rounded-[22px] bg-white/70 dark:bg-slate-800/60 border border-white/80 dark:border-slate-800 shadow-sm hover:bg-white dark:hover:bg-slate-800 transition-all flex items-center justify-between active:scale-98"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
-              <Info size={18} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">About Hostel Mess</p>
-              <p className="text-[11px] text-slate-400">Hygiene, menu rotation & rules</p>
-            </div>
-          </div>
-          <ChevronRight size={18} className="text-slate-400" />
-        </button>
-
-        {/* Share App */}
-        <button
-          onClick={handleShare}
-          className="w-full text-left p-4 rounded-[22px] bg-white/70 dark:bg-slate-800/60 border border-white/80 dark:border-slate-800 shadow-sm hover:bg-white dark:hover:bg-slate-800 transition-all flex items-center justify-between active:scale-98"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
-              <Share2 size={18} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Share App</p>
-              <p className="text-[11px] text-slate-400">Share with hostel roommates</p>
-            </div>
-          </div>
-          <ChevronRight size={18} className="text-slate-400" />
-        </button>
-
-        {/* Admin Portal Button */}
-        <div className="pt-3 animate-fadeIn">
-          <button
-            onClick={onOpenAdmin}
-            className={`w-full text-left p-4.5 rounded-[24px] ${
-              isUserAdmin(currentUser?.email)
-                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-500/25 border border-indigo-400/30'
-                : 'bg-white/70 dark:bg-slate-800/60 border border-white/80 dark:border-slate-800 shadow-sm hover:bg-white dark:hover:bg-slate-800 text-slate-900 dark:text-slate-100'
-            } transition-all flex items-center justify-between active:scale-98`}
-          >
-            <div className="flex items-center gap-3.5">
-              <div className={`p-3 rounded-2xl ${
-                isUserAdmin(currentUser?.email)
-                  ? 'bg-white/20 backdrop-blur-md text-white shadow-inner'
-                  : 'bg-slate-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200'
-              }`}>
-                <Lock size={20} strokeWidth={2.2} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold tracking-tight">Admin Portal</p>
-                  {isUserAdmin(currentUser?.email) && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 text-white font-black uppercase">
-                      Admin
-                    </span>
-                  )}
-                </div>
-                <p className={`text-[11px] font-medium mt-0.5 ${
-                  isUserAdmin(currentUser?.email) ? 'text-indigo-100' : 'text-slate-400'
-                }`}>
-                  Manage menus, timings, push broadcasts & feedback
-                </p>
-              </div>
-            </div>
-            <div className={`p-1.5 rounded-full ${
-              isUserAdmin(currentUser?.email) ? 'bg-white/20 text-white' : 'text-slate-400'
-            }`}>
-              <ChevronRight size={18} strokeWidth={2.5} />
-            </div>
-          </button>
-        </div>
-
       </div>
 
-      {/* Footer Branding */}
-      <div className="mt-8 text-center text-slate-400 dark:text-slate-500">
-        <p className="text-xs font-semibold tracking-tight flex items-center justify-center gap-1">
-          Made with <Heart size={12} className="text-rose-500 fill-rose-500" /> for Hostel Students
+      <div className="group-label">Support</div>
+      <div className="list">
+        <Row icon="chat" title="Feedback & suggestions" sub="Food, hygiene, timing — tell us" onClick={() => setSheet('feedback')} />
+        <Row icon="share" title="Share CuMeals" sub="Send the app link to friends" onClick={share} />
+        <Row icon="info" title="About" sub="Version 2.0" onClick={() => setSheet('about')} />
+        <Row
+          icon="lock"
+          title="Admin portal"
+          sub={admin ? 'Menus, timings, notifications & feedback' : 'Mess committee only'}
+          onClick={onOpenAdmin}
+          extra={admin ? <span className="pill later">Admin</span> : undefined}
+        />
+      </div>
+
+      <p style={{ textAlign: 'center', color: 'var(--fg3)', fontSize: 12, fontWeight: 600, margin: '28px 0 6px' }}>
+        Made with ♥ for hostel students
+      </p>
+
+      <UserProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} currentUser={user} />
+      <NoticeModal isOpen={noticeOpen} onClose={() => setNoticeOpen(false)} notices={notices} />
+
+      <Sheet open={sheet === 'about'} onClose={() => setSheet(null)} label="About CuMeals">
+        <div className="sh-hero">
+          <CuMealsLogo size="lg" />
+          <div><h2>CuMeals</h2><p>Good food, good mood.</p></div>
+        </div>
+        <p style={{ marginTop: 18, fontSize: 14, lineHeight: 1.6, color: 'var(--fg2)' }}>
+          Daily hostel mess menu, live meal timings and meal alerts on your phone.
+          <br />• Weekly menu kept up to date by the mess committee.
+          <br />• Live “serving now” and “up next” countdown.
+          <br />• Direct feedback line to the mess administration.
         </p>
-        <p className="text-[11px] mt-1">Version 1.0.0 (PWA)</p>
-      </div>
+      </Sheet>
 
-      {/* User Profile Auth Modal */}
-      <UserProfileModal
-        isOpen={isProfileModalOpen}
-        onClose={() => setIsProfileModalOpen(false)}
-        currentUser={currentUser}
-      />
-
-      {/* Modals */}
-      <NoticeModal
-        isOpen={isNoticeOpen}
-        onClose={() => setIsNoticeOpen(false)}
-        notices={notices}
-      />
-
-      {/* About Modal */}
-      {activeModal === 'about' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-sm rounded-[32px] bg-white dark:bg-slate-900 p-6 text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-800 shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <CuMealsLogo size="sm" rounded="rounded-lg" />
-                <h3 className="text-lg font-bold">About CuMeals</h3>
-              </div>
-              <button onClick={() => setActiveModal(null)} className="text-slate-400">✕</button>
-            </div>
-            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300 space-y-2">
-              CuMeals provides daily hostel mess schedules, live timings, and meal updates directly on your device.
-              <br /><br />
-              • Rotational weekly menu updated regularly.<br />
-              • Real-time countdown to ongoing and upcoming meals.<br />
-              • Direct feedback & suggestion portal to the mess administration.
-            </p>
-            <button
-              onClick={() => setActiveModal(null)}
-              className="w-full mt-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold"
-            >
-              Close
-            </button>
+      <Sheet open={sheet === 'feedback'} onClose={() => setSheet(null)} label="Send feedback">
+        <div className="sh-title"><h2>Send feedback</h2><p>Goes straight to the mess committee</p></div>
+        <form onSubmit={send}>
+          <div className="chips">
+            {CATS.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className="chip"
+                style={cat === c.id ? { background: 'var(--accent)', color: 'var(--accent-fg)' } : undefined}
+                onClick={() => (haptics.fire('select'), setCat(c.id))}
+              >
+                {c.label}
+              </button>
+            ))}
           </div>
-        </div>
-      )}
-
-      {/* Feedback Modal */}
-      {activeModal === 'feedback' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-sm rounded-[32px] bg-white dark:bg-slate-900 p-6 text-slate-900 dark:text-slate-100 border border-white dark:border-slate-800 shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold">Submit Feedback</h3>
-              <button onClick={() => setActiveModal(null)} className="text-slate-400">✕</button>
-            </div>
-
-            {feedbackSent ? (
-              <div className="text-center py-6 text-emerald-400 font-bold text-sm">
-                ✓ Thank you! Your feedback has been sent directly to the Admin Portal.
-              </div>
-            ) : (
-              <form onSubmit={handleSendFeedback} className="space-y-4">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-400 block mb-1.5 uppercase tracking-wider">
-                    Feedback Category
-                  </label>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {[
-                      { id: 'food', label: '🍲 Food Quality' },
-                      { id: 'hygiene', label: '✨ Cleanliness' },
-                      { id: 'timing', label: '⏰ Timings' },
-                      { id: 'general', label: '💡 General Suggestion' }
-                    ].map((cat) => (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => setFeedbackCategory(cat.id as any)}
-                        className={`p-2 rounded-xl text-xs font-semibold text-left transition-all ${
-                          feedbackCategory === cat.id
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'
-                        }`}
-                      >
-                        {cat.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-bold text-slate-400 block mb-1.5 uppercase tracking-wider">
-                    Your Message
-                  </label>
-                  <textarea
-                    rows={4}
-                    required
-                    value={feedbackText}
-                    onChange={(e) => setFeedbackText(e.target.value)}
-                    placeholder="Share details on meal taste, quantity, hygiene, or requested menu items..."
-                    className="w-full p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-indigo-500 outline-none"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={submittingFeedback}
-                  className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all disabled:opacity-50"
-                >
-                  {submittingFeedback ? 'Sending...' : 'Submit to Admin Portal'}
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
+          <textarea className="fb-text" rows={4} required value={text} onChange={(e) => setText(e.target.value)} placeholder="What can we do better?" />
+          <button type="submit" className="btn primary block" disabled={sending}>{sending ? 'Sending…' : 'Send feedback'}</button>
+        </form>
+      </Sheet>
     </div>
   );
 };

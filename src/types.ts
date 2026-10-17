@@ -1,9 +1,13 @@
+import type { ItemIcon } from './utils/foodIcons';
+
 export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
 export interface MealData {
   time: string;
   items: string[];
   description?: string;
+  /** Optional emoji per dish, e.g. [{ name: "Poha", icon: "🍚" }]. Missing dishes get an automatic icon. */
+  icons?: ItemIcon[];
 }
 
 export interface DailyMenu {
@@ -92,11 +96,22 @@ export interface MealAlertSettings {
   notify1HourBefore: boolean;    // "Dinner in 1 hour"
   notifyOnStart: boolean;        // "Dinner Started! 🌙"
   notify30MinBeforeEnd: boolean; // "Dinner ending in 30m ⏰ - Go & take your meal"
+  leadMinutes?: number;          // minutes before a meal for the menu reminder (default 60)
   meals: {
     breakfast: boolean;
     lunch: boolean;
     snacks: boolean;
     dinner: boolean;
   };
+}
+
+/** What ONE student's device wants to receive (saved on the device's push subscription). */
+export interface DeviceAlertPrefs {
+  breakfast: boolean;
+  lunch: boolean;
+  snacks: boolean;
+  dinner: boolean;
+  /** which snacks menu to show in this device's alerts */
+  snacksBlock: 'boys' | 'girls';
 }
 
